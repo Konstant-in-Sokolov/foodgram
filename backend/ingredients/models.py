@@ -18,9 +18,6 @@ class Ingredient(models.Model):
         verbose_name = 'Ингредиент'
         verbose_name_plural = 'Ингредиенты'
         ordering = ['name']
-        # Обеспечиваем, что название и единица измерения уникальны вместе
-        # (например, "Соль" (гр) и "Соль" (щепотка) — разные записи,
-        # но "Мука" (гр) уникальна).
         constraints = [
             models.UniqueConstraint(
                 fields=['name', 'measurement_unit'],

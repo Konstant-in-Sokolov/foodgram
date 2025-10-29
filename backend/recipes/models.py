@@ -3,8 +3,6 @@ from django.core.validators import MinValueValidator
 # from django.conf import settings # Используем AUTH_USER_MODEL
 from django.db import models
 
-# Получаем кастомную модель пользователя
-# User = settings.AUTH_USER_MODEL
 from ingredients.models import Ingredient
 from tags.models import Tags
 
@@ -28,7 +26,7 @@ class Recipe(models.Model):
     )
     image = models.ImageField(
         'Изображение',
-        upload_to='recipes/images/'  # Указываем папку для загрузки
+        upload_to='recipes/images/'
     )
     text = models.TextField(
         'Описание'
