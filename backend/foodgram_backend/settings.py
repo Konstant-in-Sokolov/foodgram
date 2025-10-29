@@ -40,8 +40,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    'rest_framework.authtoken',
     'rest_framework',
+    'rest_framework.authtoken',
     'corsheaders',
     'djoser',
 
@@ -136,6 +136,21 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+DJOSER = {
+    # Указываем, что токен должен возвращаться после успешного входа
+    'PASSWORD_RESET_CONFIRM_URL': '#/password/reset/confirm/{uid}/{token}',
+    'USERNAME_RESET_CONFIRM_URL': '#/username/reset/confirm/{uid}/{token}',
+    'ACTIVATION_URL': '#/activate/{uid}/{token}',
+    'SEND_ACTIVATION_EMAIL': False,
+    'SERIALIZERS': {},
+    # Указываем, какие поля пользователя будут использоваться
+    'USER_ID_FIELD': 'id',
+    # Используем встроенный механизм Token Auth от DRF
+    'TOKEN_MODEL': 'rest_framework.authtoken.models.Token',
+    # Добавляем регистрацию
+    'HIDE_VIEWS': ('user',),  # Можно скрыть некоторые лишние вью
+}
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
