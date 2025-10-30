@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Tags
+from .models import Tag
 
 
 class TagAdmin(admin.ModelAdmin):
@@ -11,4 +11,4 @@ class TagAdmin(admin.ModelAdmin):
     search_fields = ('name', 'slug')
 
 
-admin.site.register(Tags, TagAdmin)
+admin.site.register(Tag, TagAdmin)

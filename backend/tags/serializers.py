@@ -1,8 +1,8 @@
 from rest_framework import serializers
-from .models import Tags
+from .models import Tag
 
 
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Tags
+        model = Tag
         fields = ('id', 'name', 'slug')

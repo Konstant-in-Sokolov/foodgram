@@ -19,7 +19,7 @@ class CustomUserSerializer(DjoserUserSerializer):
     Стандартный сериализатор пользователя, наследуется от Djoser.
     Используется для регистрации, /users/me/ и /users/{id}/.
     """
-    
+
     class Meta:
         model = User
         # Добавьте все поля, которые должны быть видны
