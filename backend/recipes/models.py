@@ -1,6 +1,5 @@
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
-# from django.conf import settings # Используем AUTH_USER_MODEL
 from django.db import models
 
 from ingredients.models import Ingredient
@@ -82,7 +81,7 @@ class IngredientInRecipe(models.Model):
     )
     ingredient = models.ForeignKey(
         Ingredient,
-        on_delete=models.PROTECT, # Запрет удаления ингредиента, если он используется
+        on_delete=models.PROTECT,  # Запрет удаления ингредиента, если он используется
         related_name='ingredient_amounts',
         verbose_name='Ингредиент'
     )
@@ -110,3 +109,34 @@ class IngredientInRecipe(models.Model):
             f'{self.ingredient.name} – {self.amount}'
             f'{self.ingredient.measurement_unit}'
         )
+
+
+class Favorite(models.Model):
+    """Модель для хранения избранных рецептов пользователя."""
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='favorites',
+        verbose_name='Пользователь'
+    )
+    recipe = models.ForeignKey(
+        'Recipe',
+        on_delete=models.CASCADE,
+        related_name='in_favorites',
+        verbose_name='Рецепт'
+    )
+
+    class Meta:
+        verbose_name = 'Избранный рецепт'
+        verbose_name_plural = 'Избранные рецепты'
+        # Запрет на повторное добавление одного и того же рецепта в избранное
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'recipe'],
+                name='unique_favorite_recipe'
+            )
+        ]
+
+    def __str__(self):
+        return f'{self.user.username} добавил "{self.recipe.name}" в избранное'
