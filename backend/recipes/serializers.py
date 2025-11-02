@@ -29,12 +29,14 @@ class RecipeSerializer(serializers.ModelSerializer):
     )
     image = Base64ImageField(required=True)
     is_favorited = serializers.SerializerMethodField()
+    is_in_shopping_cart = serializers.SerializerMethodField()
 
     class Meta:
         model = Recipe
         fields = (
             'id', 'name', 'author', 'image', 'text', 'tags',
-            'ingredients', 'cooking_time', 'pub_date', 'is_favorited'
+            'ingredients', 'cooking_time', 'pub_date',
+            'is_favorited', 'is_in_shopping_cart'
         )
         read_only_fields = ('pub_date',)
 
@@ -44,6 +46,14 @@ class RecipeSerializer(serializers.ModelSerializer):
             # Проверяем наличие записи в модели Favorite
             # для текущего пользователя и рецепта.
             return obj.in_favorites.filter(user=request.user).exists()
+        return False
+
+    def get_is_in_shopping_cart(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            # Проверяем наличие записи в модели ShoppingCart
+            # для текущего пользователя и рецепта.
+            return obj.in_shopping_cart.filter(user=request.user).exists()
         return False
 
     # Вспомогательная функция для сохранения ингредиентов
