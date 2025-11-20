@@ -26,7 +26,9 @@ SECRET_KEY = 'django-insecure-yrii_bep4g1xl3cq-*jx$_p@n8ots%js5w@-v#5gedik8)rlsq
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '127.0.0.1:8000', 'localhost:8000']
+ALLOWED_HOSTS = [
+    '127.0.0.1', 'localhost', '127.0.0.1:8000', 'localhost:8000'
+]
 
 AUTH_USER_MODEL = 'users.CustomUser'
 
@@ -49,6 +51,10 @@ INSTALLED_APPS = [
     'recipes.apps.RecipesConfig',
     'tags.apps.TagsConfig',
     'ingredients.apps.IngredientsConfig',
+
+    # 'shortener',
+    # 'django_url_shortener',
+    # 'django_shortlink',
 ]
 
 MIDDLEWARE = [
@@ -171,3 +177,8 @@ CORS_URLS_REGEX = r'^/api/.*$'
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
 ]
+
+# SHORTENER_ENABLE_TEST_PATH = True
+# SHORTEN_PATH_LENGTH = 8
+# SHORTLINK_URL_BASE = 's/'
+# HOST_ADDRESS = 'http://localhost:8000'

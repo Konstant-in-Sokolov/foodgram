@@ -1,3 +1,5 @@
+from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
@@ -40,3 +42,44 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return self.username
+
+
+# User = get_user_model()
+
+
+class Subscription(models.Model):
+    """Модель для хранения подписок пользователя на авторов."""
+
+    user = models.ForeignKey(
+        # User,
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='follower',
+        verbose_name='Подписчик'
+    )
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='following',
+        verbose_name='Автор'
+    )
+
+    class Meta:
+        verbose_name = 'Подписка'
+        verbose_name_plural = 'Подписки'
+        # Запрет на повторную подписку: один пользователь может
+        # быть подписан на одного автора только один раз.
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'author'],
+                name='unique_subscription'
+            ),
+            # Запрет на подписку на самого себя
+            models.CheckConstraint(
+                check=~models.Q(user=models.F('author')),
+                name='prevent_self_subscription'
+            )
+        ]
+
+    def __str__(self):
+        return f'{self.user.username} подписан на {self.author.username}'

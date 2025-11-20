@@ -1,4 +1,5 @@
 import base64
+
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 from django.utils.translation import gettext_lazy
@@ -8,7 +9,9 @@ from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
 from api.shared_serializers import ShortRecipeSerializer
-# from .models import Subscription
+from .models import Subscription
+from recipes.models import Recipe
+# from recipes.serializers import RecipeSerializer
 
 
 User = get_user_model()
@@ -49,77 +52,54 @@ class SubscribedUserSerializer(UserSerializer):
         ).exists()
 
 
-class FollowListSerializer(serializers.ModelSerializer):
+# Сериализатор для отображения краткой информации о рецептах
+class RecipeMinifiedSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор для краткого отображения рецептов.
+    """
+    class Meta:
+        model = Recipe
+        fields = ('id', 'name', 'image', 'cooking_time')
+
+
+class AuthorSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор для отображения автора подписки.
+    """
     is_subscribed = serializers.SerializerMethodField()
-    recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
+    recipes = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = (
             'email', 'id', 'username', 'first_name', 'last_name',
-            'is_subscribed', 'recipes', 'recipes_count',
-        )
-        read_only_fields = (
-            'email', 'id', 'username', 'first_name', 'last_name',
-            'is_subscribed', 'recipes', 'recipes_count',
+            'is_subscribed', 'recipes', 'recipes_count'
         )
 
     def get_is_subscribed(self, obj):
         request = self.context.get('request')
-        return Subscription.objects.filter(
-            follower=request.user, following=obj
-        ).exists()
+        if request and request.user.is_authenticated:
+            return obj.following.filter(user=request.user).exists()
+        return False
+
+    def get_recipes_count(self, obj):
+        return obj.recipes.count()
 
     def get_recipes(self, obj):
         request = self.context.get('request')
-        context = {'request': request}
         recipes_limit = request.query_params.get('recipes_limit')
-        if recipes_limit is not None:
+
+        queryset = obj.recipes.all()
+
+        if recipes_limit:
             try:
-                recipes_limit = int(recipes_limit)
+                limit = int(recipes_limit)
+                queryset = queryset[:limit]
             except ValueError:
-                raise serializers.ValidationError(
-                    gettext_lazy('recipe_limit must be integer'),
-                )
-        recipes = obj.recipe_set.all()[:recipes_limit]
-        return ShortRecipeSerializer(
-            recipes, many=True, context=context
-        ).data
+                pass
 
-    def get_recipes_count(self, obj):
-        return obj.recipe_set.count()
-
-
-# class FollowSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Subscription
-#         fields = ('follower', 'following')
-#         validators = [
-#             UniqueTogetherValidator(
-#                 queryset=Subscription.objects.all(),
-#                 fields=fields,
-#                 message=gettext_lazy(
-#                     'You are already subscribed to this author'
-#                 ),
-#             )
-#         ]
-
-    # def validate(self, data):
-    #     request = self.context.get('request')
-    #     following = data['following']
-    #     if request.user == following:
-    #         raise serializers.ValidationError(
-    #             gettext_lazy('You can not subscribe to yourself'),
-    #         )
-    #     return data
-
-    # def to_representation(self, instance):
-    #     request = self.context.get('request')
-    #     context = {'request': request}
-    #     return FollowListSerializer(
-    #         instance.following, context=context
-    #     ).data
+        return RecipeMinifiedSerializer(queryset, many=True).data
 
 
 class Base64ImageField(serializers.ImageField):
@@ -145,3 +125,38 @@ class AvatarSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('avatar',)
+
+
+class SubscriptionReadSerializer(serializers.ModelSerializer):
+    """Сериализатор для отображения автора в списке подписок."""
+
+    email = serializers.EmailField(read_only=True)
+    username = serializers.CharField(read_only=True)
+    first_name = serializers.CharField(read_only=True)
+    last_name = serializers.CharField(read_only=True)
+    is_subscribed = serializers.SerializerMethodField()
+    recipes_count = serializers.SerializerMethodField()
+    recipes = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = (
+            'id', 'email', 'username', 'first_name', 'last_name',
+            'is_subscribed', 'recipes', 'recipes_count'
+        )
+
+    def get_is_subscribed(self, obj):
+        return True
+
+    def get_recipes_count(self, obj):
+        return obj.recipes.count()
+
+    def get_recipes(self, obj):
+        request = self.context.get('request')
+        recipes_limit = request.query_params.get('recipes_limit')
+        queryset = obj.recipes.all()
+
+        if recipes_limit and recipes_limit.isdigit():
+            queryset = queryset[:int(recipes_limit)]
+
+        return RecipeMinifiedSerializer(queryset, many=True).data
