@@ -5,13 +5,15 @@ from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from djoser.views import UserViewSet as DjoserUserViewSet
 
 from .serializers import (
     AuthorSerializer,
     CustomUserSerializer,
     SubscribedUserSerializer,
     # RecipeShortSerializer,
-    SubscriptionReadSerializer
+    SubscriptionReadSerializer,
+    AvatarSerializer
 )
 from .models import Subscription
 
@@ -27,7 +29,7 @@ class SubscriptionPagination(PageNumberPagination):
     page_size_query_param = 'limit'
 
 
-class CustomUserViewSet(viewsets.ModelViewSet):
+class CustomUserViewSet(DjoserUserViewSet):
     """
     ViewSet для управления пользователями и подписками.
     """
@@ -83,10 +85,16 @@ class CustomUserViewSet(viewsets.ModelViewSet):
         methods=['post', 'delete'],
         permission_classes=[permissions.IsAuthenticated]
     )
-    def subscribe(self, request, pk=None):
+    def subscribe(self, request, id=None):
         """Подписка/отписка от автора."""
         author = self.get_object()
         user = request.user
+
+        if author == user:
+            return Response(
+                {'errors': 'Нельзя подписаться на самого себя.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         if request.method == 'POST':
             if Subscription.objects.filter(user=user, author=author).exists():
@@ -113,6 +121,31 @@ class CustomUserViewSet(viewsets.ModelViewSet):
             )
 
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(
+        detail=False,
+        methods=['put', 'delete'],
+        permission_classes=[permissions.IsAuthenticated],
+        url_path='me/avatar'
+    )
+    def avatar(self, request):
+        """Обновление или удаление аватара пользователя."""
+        user = request.user
+
+        if request.method == 'PUT':
+            serializer = AvatarSerializer(
+                user, data=request.data, partial=True, context={'request': request}
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        elif request.method == 'DELETE':
+            if user.avatar:
+                user.avatar.delete(save=True)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 # class SubscriptionListViewSet(viewsets.ReadOnlyModelViewSet):

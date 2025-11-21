@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 from django.utils.translation import gettext_lazy
 from djoser.serializers import UserSerializer as DjoserUserSerializer
+from djoser.serializers import UserCreateSerializer as DjoserUserCreateSerializer
 from djoser.serializers import UserSerializer
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
@@ -17,20 +18,29 @@ from recipes.models import Recipe
 User = get_user_model()
 
 
-class CustomUserSerializer(DjoserUserSerializer):
-    """
-    Стандартный сериализатор пользователя, наследуется от Djoser.
-    Используется для регистрации, /users/me/ и /users/{id}/.
-    """
+# class CustomUserSerializer(DjoserUserSerializer):
+#     """
+#     Стандартный сериализатор пользователя, наследуется от Djoser.
+#     Используется для регистрации, /users/me/ и /users/{id}/.
+#     """
 
-    class Meta:
+#     class Meta:
+#         model = User
+#         # Добавьте все поля, которые должны быть видны
+#         fields = (
+#             'email', 'id', 'username', 'first_name', 'last_name'
+#         )
+#         # Поля для чтения
+#         read_only_fields = ('email', 'username')
+
+
+class CustomUserSerializer(DjoserUserCreateSerializer):
+
+    class Meta(DjoserUserCreateSerializer.Meta):
         model = User
-        # Добавьте все поля, которые должны быть видны
         fields = (
-            'email', 'id', 'username', 'first_name', 'last_name'
+            'id', 'email', 'username', 'first_name', 'last_name', 'password'
         )
-        # Поля для чтения
-        read_only_fields = ('email', 'username')
 
 
 class SubscribedUserSerializer(UserSerializer):
@@ -52,7 +62,6 @@ class SubscribedUserSerializer(UserSerializer):
         ).exists()
 
 
-# Сериализатор для отображения краткой информации о рецептах
 class RecipeMinifiedSerializer(serializers.ModelSerializer):
     """
     Сериализатор для краткого отображения рецептов.
