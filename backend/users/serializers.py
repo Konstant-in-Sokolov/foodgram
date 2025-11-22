@@ -18,28 +18,49 @@ from recipes.models import Recipe
 User = get_user_model()
 
 
-# class CustomUserSerializer(DjoserUserSerializer):
-#     """
-#     Стандартный сериализатор пользователя, наследуется от Djoser.
-#     Используется для регистрации, /users/me/ и /users/{id}/.
-#     """
+class Base64ImageField(serializers.ImageField):
+    """Кастомное поле для обработки Base64-изображений."""
+    def to_internal_value(self, data):
+        # Проверяем, если данные являются строкой Base64
+        if isinstance(data, str) and data.startswith('data:image'):
+            try:
+                # Декодируем строку Base64
+                format, imgstr = data.split(';base64,')
+                ext = format.split('/')[-1]
+                data = ContentFile(
+                    base64.b64decode(imgstr), name='temp.' + ext
+                )
+            except Exception:
+                raise serializers.ValidationError(
+                    "Некорректный формат Base64-изображения."
+                )
 
-#     class Meta:
-#         model = User
-#         # Добавьте все поля, которые должны быть видны
-#         fields = (
-#             'email', 'id', 'username', 'first_name', 'last_name'
-#         )
-#         # Поля для чтения
-#         read_only_fields = ('email', 'username')
+        return super().to_internal_value(data)
 
 
-class CustomUserSerializer(DjoserUserCreateSerializer):
+class AvatarSerializer(serializers.ModelSerializer):
+    avatar = Base64ImageField(required=True)
+
+    class Meta:
+        model = User
+        fields = ('avatar',)
+
+
+class CustomUserCreateSerializer(DjoserUserCreateSerializer):
+    class Meta(DjoserUserCreateSerializer.Meta):
+        model = User
+        fields = (
+            'email', 'id', 'username', 'first_name', 'last_name',
+        )
+
+
+class CustomUserSerializer(DjoserUserSerializer):
 
     class Meta(DjoserUserCreateSerializer.Meta):
         model = User
         fields = (
-            'id', 'email', 'username', 'first_name', 'last_name', 'password'
+            'id', 'email', 'username', 'first_name', 'last_name', 'password',
+            'avatar',
         )
 
 
@@ -50,12 +71,14 @@ class SubscribedUserSerializer(UserSerializer):
         model = User
         fields = (
             'id', 'email', 'username', 'first_name',
-            'last_name', 'is_subscribed'
+            'last_name', 'is_subscribed', 'avatar',
         )
 
     def get_is_subscribed(self, obj):
         request = self.context.get('request')
         if request.user.is_anonymous:
+            return False
+        if request.user == obj:
             return False
         return Subscription.objects.filter(
             follower=request.user, following=obj
@@ -83,7 +106,7 @@ class AuthorSerializer(serializers.ModelSerializer):
         model = User
         fields = (
             'email', 'id', 'username', 'first_name', 'last_name',
-            'is_subscribed', 'recipes', 'recipes_count'
+            'is_subscribed', 'recipes', 'recipes_count', 'avatar',
         )
 
     def get_is_subscribed(self, obj):
@@ -109,31 +132,6 @@ class AuthorSerializer(serializers.ModelSerializer):
                 pass
 
         return RecipeMinifiedSerializer(queryset, many=True).data
-
-
-class Base64ImageField(serializers.ImageField):
-    """Кастомное поле для обработки Base64-изображений."""
-    def to_internal_value(self, data):
-        # Проверяем, если данные являются строкой Base64
-        if isinstance(data, str) and data.startswith('data:image'):
-            try:
-                # Декодируем строку Base64
-                format, imgstr = data.split(';base64,')
-                ext = format.split('/')[-1]
-                data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
-            except Exception as e:
-                raise serializers.ValidationError("Некорректный формат Base64-изображения.")
-
-        return super().to_internal_value(data)
-
-
-class AvatarSerializer(serializers.ModelSerializer):
-    # Используем кастомное поле для приема Base64-строки
-    avatar = Base64ImageField(required=True)
-
-    class Meta:
-        model = User
-        fields = ('avatar',)
 
 
 class SubscriptionReadSerializer(serializers.ModelSerializer):

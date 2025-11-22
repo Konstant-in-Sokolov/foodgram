@@ -51,10 +51,6 @@ INSTALLED_APPS = [
     'recipes.apps.RecipesConfig',
     'tags.apps.TagsConfig',
     'ingredients.apps.IngredientsConfig',
-
-    # 'shortener',
-    # 'django_url_shortener',
-    # 'django_shortlink',
 ]
 
 MIDDLEWARE = [
@@ -150,8 +146,9 @@ DJOSER = {
     'ACTIVATION_URL': '#/activate/{uid}/{token}',
     'SEND_ACTIVATION_EMAIL': False,
     'SERIALIZERS': {
-        'user': 'users.serializers.CustomUserSerializer',
-        'current_user': 'users.serializers.CustomUserSerializer',
+        'user_create': 'users.serializers.CustomUserCreateSerializer',  # Для регистрации
+        'user': 'users.serializers.SubscribedUserSerializer',  # Для просмотра (тут аватар нужен)
+        'current_user': 'users.serializers.SubscribedUserSerializer',  # Для /users/me/
     },
     # Указываем, какие поля пользователя будут использоваться
     'USER_ID_FIELD': 'id',

@@ -35,23 +35,22 @@ class CustomUserViewSet(DjoserUserViewSet):
     """
 
     queryset = User.objects.all()
-    serializer_class = CustomUserSerializer
-    permission_classes = [permissions.IsAuthenticated]
     pagination_class = SubscriptionPagination
 
-    # Переопределяем метод, чтобы использовать SubscribedUserSerializer
     def get_serializer_class(self):
-        if self.action == 'subscriptions':
+        if self.action in ['retrieve', 'list', 'me']:
             return SubscribedUserSerializer
+        if self.action == 'subscriptions':
+            return AuthorSerializer
         return CustomUserSerializer
 
-    # Разрешения для стандартных действий:
     def get_permissions(self):
-        if self.action == 'create':
-            # Разрешаем создание (регистрацию) всем
+        if self.action in ['retrieve', 'list']:  # Просмотр доступен всем
             return [permissions.AllowAny()]
-        # Остальные действия требуют аутентификации
-        return super().get_permissions()
+        elif self.action == 'create':  # Регистрация доступна всем
+            return [permissions.AllowAny()]
+        # Для удаление/изменение/подписки нужна авторизация
+        return [permissions.IsAuthenticated()]
 
     # GET /api/users/subscriptions/
     @action(
@@ -134,7 +133,10 @@ class CustomUserViewSet(DjoserUserViewSet):
 
         if request.method == 'PUT':
             serializer = AvatarSerializer(
-                user, data=request.data, partial=True, context={'request': request}
+                user,
+                data=request.data,
+                partial=True,
+                context={'request': request}
             )
             serializer.is_valid(raise_exception=True)
             serializer.save()
@@ -146,24 +148,3 @@ class CustomUserViewSet(DjoserUserViewSet):
             return Response(status=status.HTTP_204_NO_CONTENT)
 
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
-
-
-# class SubscriptionListViewSet(viewsets.ReadOnlyModelViewSet):
-#     serializer_class = SubscriptionReadSerializer
-#     permission_classes = (IsAuthenticated,)
-
-#     def get_queryset(self):
-#         return User.objects.filter(following__user=self.request.user)
-
-
-# class SubscriptionViewSet(viewsets.ReadOnlyModelViewSet):
-#     """
-#     ViewSet для отображения списка авторов, на которых подписан пользователь.
-#     Соответствует маршруту /api/users/subscriptions/
-#     """
-#     serializer_class = AuthorSerializer
-#     permission_classes = [IsAuthenticated]
-#     pagination_class = SubscriptionPagination
-
-#     def get_queryset(self):
-#         return User.objects.filter(following__user=self.request.user)
