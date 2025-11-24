@@ -17,6 +17,14 @@ class IngredientWriteSerializer(serializers.ModelSerializer):
         model = IngredientInRecipe
         fields = ('id', 'amount')
 
+    def validate_amount(self, value):
+        """Проверяет, что количество ингредиента > 0."""
+        if value <= 0:
+            raise serializers.ValidationError(
+                'Количество ингредиента должно быть больше нуля!'
+            )
+        return value
+
 
 class IngredientInRecipeSerializer(serializers.ModelSerializer):
     """Сериализатор для отображения ингредиентов с количеством."""
@@ -66,19 +74,29 @@ class RecipeSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ('pub_date',)
 
-    def validate_ingredients(self, ingredients):
+    def validate(self, data):
         """Проверяет, что список ингредиентов не пуст."""
-        if not ingredients:
+        if not data.get('ingredients'):
             # Если список пуст, вызываем ошибку валидации с нужным сообщением
             raise serializers.ValidationError('Обязательное поле.')
 
-        # Дополнительная проверка на уникальность, если требуется
-        # ingredient_ids = [item['id'] for item in ingredients]
-        # if len(ingredient_ids) != len(set(ingredient_ids)):
-        #     raise serializers.ValidationError(
-        #         'Ингредиенты не могут повторяться.'
-        #     )
-        return ingredients
+        # проверка на уникальность
+        ingredient_ids = [item['id'] for item in data]
+        if len(ingredient_ids) != len(set(ingredient_ids)):
+            raise serializers.ValidationError(
+                'Ингредиенты не могут повторяться.'
+            )
+        tags = data.get('tags')
+        if not tags:
+            raise serializers.ValidationError(
+                {'tags': 'Необходимо выбрать хотя бы один тег.'}
+            )
+        tag_ids = [tag.id for tag in tags]
+        if len(tag_ids) != len(set(tag_ids)):
+            raise serializers.ValidationError(
+                {'tags': 'Теги не могут повторяться.'}
+            )
+        return data
 
     def get_is_favorited(self, obj):
         request = self.context.get('request')
