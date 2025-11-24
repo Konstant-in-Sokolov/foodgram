@@ -13,6 +13,7 @@ from rest_framework.permissions import (
 )
 from rest_framework.response import Response
 
+from api.pagination import SubscriptionPagination
 from .models import Recipe, Favorite, ShoppingCart, IngredientInRecipe
 from .serializers import RecipeSerializer
 from users.serializers import SubscriptionSerializer
@@ -34,6 +35,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
+    pagination_class = SubscriptionPagination
 
     def get_queryset(self):
         queryset = super().get_queryset()

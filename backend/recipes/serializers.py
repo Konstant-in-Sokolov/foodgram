@@ -66,6 +66,20 @@ class RecipeSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ('pub_date',)
 
+    def validate_ingredients(self, ingredients):
+        """Проверяет, что список ингредиентов не пуст."""
+        if not ingredients:
+            # Если список пуст, вызываем ошибку валидации с нужным сообщением
+            raise serializers.ValidationError('Обязательное поле.')
+
+        # Дополнительная проверка на уникальность, если требуется
+        # ingredient_ids = [item['id'] for item in ingredients]
+        # if len(ingredient_ids) != len(set(ingredient_ids)):
+        #     raise serializers.ValidationError(
+        #         'Ингредиенты не могут повторяться.'
+        #     )
+        return ingredients
+
     def get_is_favorited(self, obj):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
