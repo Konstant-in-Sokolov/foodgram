@@ -5,7 +5,7 @@ from .models import Recipe, Tag, Ingredient, IngredientInRecipe
 from tags.serializers import TagSerializer
 from ingredients.serializers import IngredientSerializer
 from recipes.fields import Base64ImageField
-from users.serializers import SubscriptionSerializer
+from users.serializers import SubscriptionSerializer, UserReadSerializer
 
 
 class IngredientWriteSerializer(serializers.ModelSerializer):
@@ -34,23 +34,24 @@ class IngredientInRecipeSerializer(serializers.ModelSerializer):
 
 class RecipeSerializer(serializers.ModelSerializer):
     """Сериализатор для создания и отображения рецептов."""
-    author = SubscriptionSerializer(read_only=True)
+    # author = SubscriptionSerializer(read_only=True)
+    author = UserReadSerializer(read_only=True)
     image = Base64ImageField(required=True)
-    
+
     # --- ИСПРАВЛЕНИЕ ТЕГОВ ---
     # 1. На вход принимаем ID (PrimaryKeyRelatedField)
     tags = serializers.PrimaryKeyRelatedField(
         queryset=Tag.objects.all(),
         many=True
     )
-    
+
     # Ингредиенты: на вход
     ingredients = IngredientWriteSerializer(many=True, write_only=True)
     # Ингредиенты: на выход
     read_ingredients = IngredientInRecipeSerializer(
         source='ingredient_amounts', many=True, read_only=True
     )
-    
+
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
 
@@ -59,7 +60,8 @@ class RecipeSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'name', 'author', 'image', 'text',
             'tags', 'ingredients', 'read_ingredients',
-            'cooking_time', 'pub_date',
+            'cooking_time',
+            # 'pub_date',
             'is_favorited', 'is_in_shopping_cart'
         )
         read_only_fields = ('pub_date',)
@@ -81,14 +83,14 @@ class RecipeSerializer(serializers.ModelSerializer):
         Формируем красивый ответ для фронтенда.
         """
         rep = super().to_representation(instance)
-        
+
         # 1. Подменяем поле ingredients (убираем read_ingredients)
         rep['ingredients'] = rep.pop('read_ingredients')
-        
+
         # 2. --- ИСПРАВЛЕНИЕ ТЕГОВ (НА ВЫХОД) ---
         # Подменяем список ID на список объектов тегов
         rep['tags'] = TagSerializer(instance.tags.all(), many=True).data
-        
+
         return rep
 
     def add_ingredients(self, ingredients_data, recipe):
