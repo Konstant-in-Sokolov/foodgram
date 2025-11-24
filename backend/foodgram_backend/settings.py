@@ -149,6 +149,7 @@ DJOSER = {
         # 'user_create': 'users.serializers.UserCreateSerializer',  # Для регистрации
         'user': 'users.serializers.UserReadSerializer',  # Для просмотра
         'current_user': 'users.serializers.UserReadSerializer',  # Для /users/me/
+        'set_password': 'djoser.serializers.SetPasswordSerializer',
     },
     # Указываем, какие поля пользователя будут использоваться
     'USER_ID_FIELD': 'id',

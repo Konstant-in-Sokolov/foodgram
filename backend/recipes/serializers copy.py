@@ -6,10 +6,11 @@ from tags.serializers import TagSerializer
 from ingredients.serializers import IngredientSerializer
 from recipes.fields import Base64ImageField
 from users.serializers import SubscriptionSerializer
+from tags.serializers import TagSerializer
 
 
 class IngredientWriteSerializer(serializers.ModelSerializer):
-    """Сериализатор для записи ингредиентов (валидация входных данных)."""
+    """Сериализатор для записи ингредиентов."""
     id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
     amount = serializers.IntegerField()
 
@@ -35,22 +36,15 @@ class IngredientInRecipeSerializer(serializers.ModelSerializer):
 class RecipeSerializer(serializers.ModelSerializer):
     """Сериализатор для создания и отображения рецептов."""
     author = SubscriptionSerializer(read_only=True)
-    image = Base64ImageField(required=True)
-    
-    # --- ИСПРАВЛЕНИЕ ТЕГОВ ---
-    # 1. На вход принимаем ID (PrimaryKeyRelatedField)
-    tags = serializers.PrimaryKeyRelatedField(
-        queryset=Tag.objects.all(),
-        many=True
-    )
-    
-    # Ингредиенты: на вход
     ingredients = IngredientWriteSerializer(many=True, write_only=True)
-    # Ингредиенты: на выход
     read_ingredients = IngredientInRecipeSerializer(
         source='ingredient_amounts', many=True, read_only=True
     )
-    
+    tags = TagSerializer(
+        many=True,
+        # read_only=True
+    )
+    image = Base64ImageField(required=True)
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
 
@@ -78,21 +72,14 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         """
-        Формируем красивый ответ для фронтенда.
+        Переименовываем read_ingredients обратно в ingredients для фронта.
         """
         rep = super().to_representation(instance)
-        
-        # 1. Подменяем поле ingredients (убираем read_ingredients)
         rep['ingredients'] = rep.pop('read_ingredients')
-        
-        # 2. --- ИСПРАВЛЕНИЕ ТЕГОВ (НА ВЫХОД) ---
-        # Подменяем список ID на список объектов тегов
-        rep['tags'] = TagSerializer(instance.tags.all(), many=True).data
-        
         return rep
 
     def add_ingredients(self, ingredients_data, recipe):
-        """Сохраняем ингредиенты с количеством (bulk_create для скорости)."""
+        """Сохраняем ингредиенты с количеством."""
         IngredientInRecipe.objects.bulk_create([
             IngredientInRecipe(
                 recipe=recipe,
@@ -104,16 +91,12 @@ class RecipeSerializer(serializers.ModelSerializer):
     @transaction.atomic
     def create(self, validated_data):
         ingredients_data = validated_data.pop('ingredients', [])
-        tags_data = validated_data.pop('tags', []) # Тут теперь список объектов Tag (Django сам их нашел по ID)
+        tags_data = validated_data.pop('tags', [])
 
-        validated_data.pop('author', None)
-        # Важно: добавляем автора из request
-        author = self.context.get('request').user
-        recipe = Recipe.objects.create(author=author, **validated_data)
+        recipe = Recipe.objects.create(**validated_data)
 
         if tags_data:
             recipe.tags.set(tags_data)
-
         if ingredients_data:
             self.add_ingredients(ingredients_data, recipe)
 
@@ -121,17 +104,18 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def update(self, instance, validated_data):
-        # Если поле не передали, ставим None, чтобы не стереть существующее случайно
-        # (хотя pop с дефолтом [] сработает, но лучше проверить наличие ключа)
+        ingredients_data = validated_data.pop('ingredients', [])
+        tags_data = validated_data.pop('tags', [])
 
-        if 'tags' in validated_data:
-            tags_data = validated_data.pop('tags')
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        if tags_data:
             instance.tags.set(tags_data)
 
-        if 'ingredients' in validated_data:
-            ingredients_data = validated_data.pop('ingredients')
+        if ingredients_data:
             instance.ingredient_amounts.all().delete()
             self.add_ingredients(ingredients_data, instance)
 
-        # Обновляем остальные поля
-        return super().update(instance, validated_data)
+        return instance

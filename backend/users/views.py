@@ -42,7 +42,7 @@ class CustomUserViewSet(DjoserUserViewSet):
             return SubscriptionSerializer
         if self.action == 'avatar':
             return UserAvatarSerializer
-        return UserCreateSerializer
+        return super().get_serializer_class()
 
     def get_permissions(self):
         if self.action in ['retrieve', 'list']:  # Просмотр доступен всем
@@ -135,7 +135,7 @@ class CustomUserViewSet(DjoserUserViewSet):
             serializer = UserAvatarSerializer(
                 user,
                 data=request.data,
-                partial=True,
+                # partial=True,
                 context={'request': request}
             )
             serializer.is_valid(raise_exception=True)
