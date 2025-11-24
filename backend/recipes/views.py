@@ -8,12 +8,14 @@ from rest_framework.exceptions import ValidationError
 from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
+from rest_framework.permissions import (
+    IsAuthenticatedOrReadOnly, IsAuthenticated
+)
 from rest_framework.response import Response
 
 from .models import Recipe, Favorite, ShoppingCart, IngredientInRecipe
 from .serializers import RecipeSerializer
-from users.serializers import AuthorSerializer
+from users.serializers import SubscriptionSerializer
 
 User = get_user_model()
 
@@ -82,7 +84,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
             )
 
         elif request.method == 'DELETE':
-            favorite_instance = Favorite.objects.filter(user=user, recipe=recipe)
+            favorite_instance = Favorite.objects.filter(
+                user=user, recipe=recipe
+            )
             if not favorite_instance.exists():
                 return Response(
                     {'errors': 'Рецепта нет в избранном.'},
@@ -95,7 +99,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     # --- КОРЗИНА (добавление/удаление) ---
     @action(
-        detail=True, methods=['post', 'delete'], permission_classes=[IsAuthenticated]
+        detail=True,
+        methods=['post', 'delete'],
+        permission_classes=[IsAuthenticated]
     )
     def shopping_cart(self, request, pk=None):
         recipe = self.get_object()
@@ -174,7 +180,7 @@ class SubscriptionPagination(PageNumberPagination):
 
 
 class SubscriptionViewSet(viewsets.ReadOnlyModelViewSet):
-    serializer_class = AuthorSerializer
+    serializer_class = SubscriptionSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = SubscriptionPagination
 

@@ -5,7 +5,7 @@ from .models import Recipe, Tag, Ingredient, IngredientInRecipe
 from tags.serializers import TagSerializer
 from ingredients.serializers import IngredientSerializer
 from recipes.fields import Base64ImageField
-from users.serializers import AuthorSerializer
+from users.serializers import SubscriptionSerializer
 from tags.serializers import TagSerializer
 
 
@@ -35,7 +35,7 @@ class IngredientInRecipeSerializer(serializers.ModelSerializer):
 
 class RecipeSerializer(serializers.ModelSerializer):
     """Сериализатор для создания и отображения рецептов."""
-    author = AuthorSerializer(read_only=True)
+    author = SubscriptionSerializer(read_only=True)
     ingredients = IngredientWriteSerializer(many=True, write_only=True)
     read_ingredients = IngredientInRecipeSerializer(
         source='ingredient_amounts', many=True, read_only=True

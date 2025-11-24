@@ -8,12 +8,8 @@ from rest_framework.response import Response
 from djoser.views import UserViewSet as DjoserUserViewSet
 
 from .serializers import (
-    AuthorSerializer,
-    CustomUserSerializer,
-    SubscribedUserSerializer,
-    # RecipeShortSerializer,
-    SubscriptionReadSerializer,
-    AvatarSerializer
+    UserCreateSerializer, UserReadSerializer,
+    SubscriptionSerializer, UserAvatarSerializer
 )
 from .models import Subscription
 
@@ -39,10 +35,14 @@ class CustomUserViewSet(DjoserUserViewSet):
 
     def get_serializer_class(self):
         if self.action in ['retrieve', 'list', 'me']:
-            return SubscribedUserSerializer
+            return UserReadSerializer
         if self.action == 'subscriptions':
-            return AuthorSerializer
-        return CustomUserSerializer
+            return SubscriptionSerializer
+        if self.action == 'subscribe':
+            return SubscriptionSerializer
+        if self.action == 'avatar':
+            return UserAvatarSerializer
+        return UserCreateSerializer
 
     def get_permissions(self):
         if self.action in ['retrieve', 'list']:  # Просмотр доступен всем
@@ -67,12 +67,12 @@ class CustomUserViewSet(DjoserUserViewSet):
 
         page = self.paginate_queryset(authors)
         if page is not None:
-            serializer = AuthorSerializer(
+            serializer = SubscriptionSerializer(
                 page, many=True, context={'request': request}
             )
             return self.get_paginated_response(serializer.data)
 
-        serializer = SubscriptionReadSerializer(
+        serializer = UserReadSerializer(
             authors, many=True, context={'request': request}
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -103,7 +103,7 @@ class CustomUserViewSet(DjoserUserViewSet):
                 )
             Subscription.objects.create(user=user, author=author)
 
-            serializer = SubscriptionReadSerializer(
+            serializer = UserReadSerializer(
                 author, context={'request': request}
             )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -132,7 +132,7 @@ class CustomUserViewSet(DjoserUserViewSet):
         user = request.user
 
         if request.method == 'PUT':
-            serializer = AvatarSerializer(
+            serializer = UserAvatarSerializer(
                 user,
                 data=request.data,
                 partial=True,

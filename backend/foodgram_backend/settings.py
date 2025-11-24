@@ -141,14 +141,14 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 DJOSER = {
     # Указываем, что токен должен возвращаться после успешного входа
-    'PASSWORD_RESET_CONFIRM_URL': '#/password/reset/confirm/{uid}/{token}',
-    'USERNAME_RESET_CONFIRM_URL': '#/username/reset/confirm/{uid}/{token}',
-    'ACTIVATION_URL': '#/activate/{uid}/{token}',
+    # 'PASSWORD_RESET_CONFIRM_URL': '#/password/reset/confirm/{uid}/{token}',
+    # 'USERNAME_RESET_CONFIRM_URL': '#/username/reset/confirm/{uid}/{token}',
+    # 'ACTIVATION_URL': '#/activate/{uid}/{token}',
     'SEND_ACTIVATION_EMAIL': False,
     'SERIALIZERS': {
-        'user_create': 'users.serializers.CustomUserCreateSerializer',  # Для регистрации
-        'user': 'users.serializers.SubscribedUserSerializer',  # Для просмотра (тут аватар нужен)
-        'current_user': 'users.serializers.SubscribedUserSerializer',  # Для /users/me/
+        # 'user_create': 'users.serializers.UserCreateSerializer',  # Для регистрации
+        'user': 'users.serializers.UserReadSerializer',  # Для просмотра
+        'current_user': 'users.serializers.UserReadSerializer',  # Для /users/me/
     },
     # Указываем, какие поля пользователя будут использоваться
     'USER_ID_FIELD': 'id',
