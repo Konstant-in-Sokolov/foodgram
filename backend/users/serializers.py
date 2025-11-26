@@ -2,11 +2,10 @@ import base64
 
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
-from rest_framework import serializers
-from djoser.serializers import (
+from djoser.serializers import \
     UserCreateSerializer as DjoserUserCreateSerializer
-)
 from djoser.serializers import UserSerializer as DjoserUserSerializer
+from rest_framework import serializers
 
 from recipes.models import Recipe
 
@@ -48,7 +47,7 @@ class UserAvatarSerializer(serializers.ModelSerializer):
 
 
 class UserCreateSerializer(DjoserUserCreateSerializer):
-    """Сериализатор для РЕГИСТРАЦИИ (POST)."""
+    """Сериализатор для РЕГИСТРАЦИИ."""
     class Meta(DjoserUserCreateSerializer.Meta):
         model = User
         fields = (
@@ -82,10 +81,7 @@ class UserReadSerializer(DjoserUserSerializer):
 
 
 class SubscriptionSerializer(UserReadSerializer):
-    """
-    Сериализатор для раздела ПОДПИСКИ.
-    Наследуется от UserReadSerializer, но добавляет список рецептов.
-    """
+    """Сериализатор для раздела ПОДПИСКИ."""
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
 

@@ -14,8 +14,7 @@ services:
     volumes:
       - pg_data:/var/lib/postgresql/data
   backend:
-    # image: foodgram-backend:latest
-    build: ../backend/
+    image: ksokolov/foodgram_backend
     depends_on: 
       - db
     env_file: ../.env
@@ -25,7 +24,7 @@ services:
       - docs:/app/docs/
   frontend:
     container_name: foodgram-front
-    build: ../frontend
+    image: ksokolov/foodgram_frontend
     volumes:
       - frontend:/app/result_build/build
   nginx:

@@ -5,7 +5,6 @@ from django.db import models
 from ingredients.models import Ingredient
 from tags.models import Tag
 
-
 User = get_user_model()
 
 
@@ -42,10 +41,9 @@ class Recipe(models.Model):
         'Дата публикации',
         auto_now_add=True
     )
-    # Связи с другими моделями
     ingredients = models.ManyToManyField(
         Ingredient,
-        through='IngredientInRecipe',  # Связь через вспомогательную модель
+        through='IngredientInRecipe',
         related_name='recipes',
         verbose_name='Ингредиенты'
     )
@@ -58,7 +56,7 @@ class Recipe(models.Model):
     class Meta:
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
-        ordering = ['-pub_date']  # Сортировка от новых к старым
+        ordering = ['-pub_date']
         constraints = [
             models.UniqueConstraint(
                 fields=['author', 'name'],
@@ -81,7 +79,7 @@ class IngredientInRecipe(models.Model):
     )
     ingredient = models.ForeignKey(
         Ingredient,
-        on_delete=models.PROTECT,  # Запрет удаления ингредиента, если он используется
+        on_delete=models.PROTECT,
         related_name='ingredient_amounts',
         verbose_name='Ингредиент'
     )
@@ -170,4 +168,7 @@ class ShoppingCart(models.Model):
         ]
 
     def __str__(self):
-        return f'{self.user.username} добавил "{self.recipe.name}" в список покупок'
+        return (
+            f'{self.user.username} добавил '
+            f'"{self.recipe.name}" в список покупок.'
+        )

@@ -51,8 +51,7 @@ class Subscription(models.Model):
     """Модель для хранения подписок пользователя на авторов."""
 
     user = models.ForeignKey(
-        # User,
-        settings.AUTH_USER_MODEL,
+        settings.AUTH_USER_MODEL,  # User
         on_delete=models.CASCADE,
         related_name='follower',
         verbose_name='Подписчик'

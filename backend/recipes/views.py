@@ -1,36 +1,34 @@
 from django.contrib.auth import get_user_model
 from django.db.models import Sum
+from django.http import Http404, HttpResponse
 from django.shortcuts import redirect
 from django.urls import reverse
-from django.http import HttpResponse, Http404
-
-from rest_framework.exceptions import ValidationError
-from rest_framework import viewsets, status
+from rest_framework import status, viewsets
 from rest_framework.decorators import action, api_view
-from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import (
-    IsAuthenticatedOrReadOnly, IsAuthenticated
-)
+from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import (IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
 
 from api.pagination import SubscriptionPagination
-from .models import Recipe, Favorite, ShoppingCart, IngredientInRecipe
-from .serializers import RecipeSerializer
 from users.serializers import SubscriptionSerializer
+
+from .models import Favorite, IngredientInRecipe, Recipe, ShoppingCart
+from .serializers import RecipeSerializer
 
 User = get_user_model()
 
 
 @api_view(['GET'])
 def recipe_short_redirect(request, pk):
-    '''Обрабатывает короткую ссылку и перенаправляет на полный URL.'''
+    """Обрабатывает короткую ссылку и перенаправляет на полный URL."""
     if not Recipe.objects.filter(pk=pk).exists():
         raise Http404(f'id={pk} рецепт не найден.')
     return redirect(f'/recipes/{pk}/')
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
-    '''Вьюсет для Рецептов.'''
+    """Вьюсет для Рецептов."""
 
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
@@ -41,19 +39,16 @@ class RecipeViewSet(viewsets.ModelViewSet):
         queryset = super().get_queryset()
         user = self.request.user
 
-        # --- ФИЛЬТРАЦИЯ ПО ТЕГАМ ---
         tags_slugs = self.request.query_params.getlist('tags')
         if tags_slugs:
             queryset = queryset.filter(tags__slug__in=tags_slugs).distinct()
 
-        # --- ФИЛЬТРАЦИЯ ПО ИЗБРАННОМУ И СПИСКУ ПОКУПОК ---
         if user.is_authenticated:
             if self.request.query_params.get('is_favorited') == '1':
                 queryset = queryset.filter(in_favorites__user=user)
             if self.request.query_params.get('is_in_shopping_cart') == '1':
                 queryset = queryset.filter(in_shopping_cart__user=user)
 
-        # --- ФИЛЬТРАЦИЯ ПО АВТОРУ ---
         author_id = self.request.query_params.get('author')
         if author_id:
             queryset = queryset.filter(author__id=author_id)
@@ -63,7 +58,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
-    # --- ИЗБРАННОЕ ---
     @action(
         detail=True,
         methods=['post', 'delete'],
@@ -99,7 +93,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    # --- КОРЗИНА (добавление/удаление) ---
     @action(
         detail=True,
         methods=['post', 'delete'],
@@ -120,9 +113,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 {'message': 'Рецепт добавлен в корзину.'},
                 status=status.HTTP_201_CREATED,
             )
-
         elif request.method == 'DELETE':
-            cart_instance = ShoppingCart.objects.filter(user=user, recipe=recipe)
+            cart_instance = ShoppingCart.objects.filter(
+                user=user, recipe=recipe
+            )
             if not cart_instance.exists():
                 return Response(
                     {'errors': 'Рецепт не найден в корзине.'},
@@ -133,7 +127,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    # --- ЗАГРУЗКА СПИСКА ПОКУПОК ---
     @action(
         detail=False,
         methods=['get'],
@@ -141,27 +134,31 @@ class RecipeViewSet(viewsets.ModelViewSet):
         url_path='download_shopping_cart',
     )
     def download_shopping_cart(self, request):
-        '''Возвращает список ингредиентов из корзины в виде текстового файла.'''
+        """Скачать список ингредиентов из корзины."""
         user = request.user
 
         ingredients = (
-            IngredientInRecipe.objects.filter(recipe__in_shopping_cart__user=user)
+            IngredientInRecipe.objects
+            .filter(recipe__in_shopping_cart__user=user)
             .values('ingredient__name', 'ingredient__measurement_unit')
             .annotate(total_amount=Sum('amount'))
             .order_by('ingredient__name')
         )
 
         shopping_list = [
-            f"{item['ingredient__name']} ({item['ingredient__measurement_unit']}) — {item['total_amount']}"
+            f'{item['ingredient__name']} '
+            f'({item['ingredient__measurement_unit']}) — '
+            f'{item['total_amount']}'
             for item in ingredients
         ]
 
         content = '\n'.join(shopping_list)
         response = HttpResponse(content, content_type='text/plain')
-        response['Content-Disposition'] = 'attachment; filename="shopping_list.txt"'
+        response['Content-Disposition'] = (
+            'attachment; filename="shopping_list.txt"'
+        )
         return response
 
-    # --- КОРОТКАЯ ССЫЛКА ---
     @action(detail=True, methods=['get'], url_path='get-link')
     def get_short_link(self, request, pk=None):
         if not Recipe.objects.filter(pk=pk).exists():
@@ -173,12 +170,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 )
             }
         )
-
-
-# --- ПАГИНАЦИЯ ПОДПИСОК ---
-class SubscriptionPagination(PageNumberPagination):
-    page_size = 6
-    page_size_query_param = 'limit'
 
 
 class SubscriptionViewSet(viewsets.ReadOnlyModelViewSet):
