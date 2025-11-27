@@ -1,21 +1,18 @@
 import csv
 
 from django.core.management.base import BaseCommand
-from django.db import IntegrityError
-
 from ingredients.models import Ingredient
 
 
 class Command(BaseCommand):
-    help = 'Loads ingredients from the ingredients.csv'
-    'file located in the data/ directory.'
+    help = 'Загружаем ingredients из ingredients.csv'
 
     def handle(self, *args, **options):
         # Очищаем модель Ingredient перед загрузкой (опционально)
         Ingredient.objects.all().delete()
         self.stdout.write(self.style.WARNING('Existing ingredients cleared.'))
 
-        # Указываем путь к вашему файлу ingredients.csv
+        # Указываем путь к файлу ingredients.csv
         # Путь относительно корня проекта (backend/data/ingredients.csv)
         file_path = '../data/ingredients.csv'
 
@@ -41,12 +38,15 @@ class Command(BaseCommand):
                         Ingredient(name=name, measurement_unit=unit)
                     )
 
-                # Создаем все объекты одним запросом (эффективно)
+                # Создаем все объекты одним запросом.
                 Ingredient.objects.bulk_create(ingredients_to_create)
 
-                self.stdout.write(self.style.SUCCESS(
-                    f'Successfully loaded {len(ingredients_to_create)} ingredients.'
-                ))
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        f'Successfully loaded '
+                        f'{len(ingredients_to_create)} ingredients.'
+                    )
+                )
 
         except FileNotFoundError:
             self.stdout.write(self.style.ERROR(

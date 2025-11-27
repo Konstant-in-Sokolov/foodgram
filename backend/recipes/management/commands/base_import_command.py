@@ -33,7 +33,7 @@ class BaseImportCommand(BaseCommand):
             self.stdout.write('\n' + '=' * 50)
             self.stdout.write(
                 self.style.SUCCESS(
-                    f'{self.object_name.upper()} ИМПОРТИРОВАНЫ:'
+                    f'{self.object_name.upper()} ИМПОРТИРОВАНЫ: '
                 )
             )
             self.stdout.write(f'Создано новых записей: {created_count}')

@@ -6,8 +6,8 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
 from .models import Subscription
-from .serializers import (SubscriptionSerializer,
-                          UserAvatarSerializer, UserReadSerializer)
+from .serializers import (SubscriptionSerializer, UserAvatarSerializer,
+                          UserReadSerializer)
 
 User = get_user_model()
 
