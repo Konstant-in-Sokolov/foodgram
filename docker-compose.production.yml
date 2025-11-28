@@ -10,14 +10,14 @@ volumes:
 services:
   db:
     image: postgres:15
-    env_file: ../.env
+    env_file: ./.env
     volumes:
       - pg_data:/var/lib/postgresql/data
   backend:
     image: ksokolov/foodgram_backend
     depends_on: 
       - db
-    env_file: ../.env
+    env_file: ./.env
     volumes:
       - static_value:/app/staticfiles/
       - media_value:/app/media/
