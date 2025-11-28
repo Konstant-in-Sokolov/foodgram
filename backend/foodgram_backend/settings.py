@@ -176,7 +176,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 DJOSER = {
     'SEND_ACTIVATION_EMAIL': False,
     'SERIALIZERS': {
-        # 'user_create': 'users.serializers.UserCreateSerializer',  # Для регистрации
         'user': 'users.serializers.UserReadSerializer',  # Для просмотра
         'current_user': 'users.serializers.UserReadSerializer',  # Для /users/me/
         'set_password': 'djoser.serializers.SetPasswordSerializer',
