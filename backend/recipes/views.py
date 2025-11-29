@@ -144,12 +144,12 @@ class RecipeViewSet(viewsets.ModelViewSet):
             .order_by('ingredient__name')
         )
 
-        shopping_list = [
+        shopping_list = [(
             f'{item['ingredient__name']} '
             f'({item['ingredient__measurement_unit']}) — '
             f'{item['total_amount']}'
             for item in ingredients
-        ]
+        )]
 
         content = '\n'.join(shopping_list)
         response = HttpResponse(content, content_type='text/plain')
