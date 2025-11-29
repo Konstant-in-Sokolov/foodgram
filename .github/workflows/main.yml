@@ -1,6 +1,7 @@
 name: Main Foodgram workflow
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -88,30 +89,6 @@ jobs:
           # на сервере и в docker-compose.yml не указывать версию
           tags: ksokolov/foodgram_backend:latest
 
-  # frontend_tests:
-  #   runs-on: ubuntu-latest
-
-  #   steps:
-  #   - uses: actions/checkout@v3
-  #   - name: Set up nodeJS
-  #     # Это готовый воркфлоу для установки Node.js на раннер
-  #     uses: actions/setup-node@v3
-  #     with:
-  #       # Это параметр воркфлоу, указывающий нужную версию Node.js
-  #       node-version: 18
-
-  #   - name: Install dependencies
-  #     # Эта команда устанавливает зависимости для фронтенда
-  #     run: |
-  #       cd frontend/
-  #       npm ci --legacy-peer-deps
-
-  #   - name: Test frontend
-  #     # Запускаем тесты
-  #     run: |
-  #       cd frontend/
-  #       npm run test
-
   build_frontend_and_push_to_docker_hub:
     name: Push frontend Docker image to DockerHub
     runs-on: ubuntu-latest
@@ -173,6 +150,17 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           source: "docker-compose.production.yml"
+          target: "foodgram"
+      - name: Copy nginx.conf via scp
+        uses: appleboy/scp-action@master
+      # Передаём параметры для action appleboy/scp-action:
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          source: "infra/nginx.conf"
+          strip_components: 1
           target: "foodgram"
       - name: Executing remote ssh commands to deploy
         uses: appleboy/ssh-action@master
