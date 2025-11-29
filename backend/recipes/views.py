@@ -147,10 +147,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
         shopping_list = [
             (
                 f'{item['ingredient__name']} '
-                f'({item['ingredient__measurement_unit']}) — '
+                f'{item['ingredient__measurement_unit']} — '
                 f'{item['total_amount']}'
-            )
-            for item in ingredients
+            ) for item in ingredients
         ]
 
         content = '\n'.join(shopping_list)
