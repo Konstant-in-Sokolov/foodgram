@@ -66,11 +66,9 @@ class Subscription(models.Model):
     class Meta:
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
-        # Запрет на повторную подписку: один пользователь может
-        # быть подписан на одного автора только один раз.
         constraints = [
             models.UniqueConstraint(
-                fields=['user', 'author'],
+                fields=('user', 'author'),
                 name='unique_subscription'
             ),
             # Запрет на подписку на самого себя

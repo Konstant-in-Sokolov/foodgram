@@ -19,6 +19,7 @@ class Base64ImageField(serializers.ImageField):
                 raise serializers.ValidationError(
                     'Некорректная Base64-строка изображения.'
                 )
-            data = ContentFile(decoded_file, name=f'{uuid.uuid4()}.{ext}')
+            file_uuid = uuid.uuid4()
+            data = ContentFile(decoded_file, name=f'{file_uuid}.{ext}')
 
         return super().to_internal_value(data)

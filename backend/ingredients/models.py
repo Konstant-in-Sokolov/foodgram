@@ -20,7 +20,7 @@ class Ingredient(models.Model):
         ordering = ['name']
         constraints = [
             models.UniqueConstraint(
-                fields=['name', 'measurement_unit'],
+                fields=('name', 'measurement_unit'),
                 name='unique_ingredient_unit'
             )
         ]

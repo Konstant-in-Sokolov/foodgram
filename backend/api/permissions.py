@@ -3,9 +3,11 @@ from rest_framework import permissions
 
 class IsOwnerOrReadOnly(permissions.BasePermission):
     """
-    Кастомное разрешение, которое позволяет:
+    Кастомное разрешение для атвора и читателя.
+
+    Разрешает:
     - Всем: GET, HEAD, OPTIONS (только чтение)
-    - Владельцу объекта (автору): PUT, PATCH, DELETE
+    - Владельцу объекта (автору): PUT, PATCH, DELETE.
     """
 
     def has_object_permission(self, request, view, obj):

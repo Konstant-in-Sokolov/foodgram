@@ -19,9 +19,6 @@ class Command(BaseCommand):
         try:
             with open(file_path, encoding='utf-8') as csvfile:
                 reader = csv.reader(csvfile)
-                # Пропускаем заголовок, если он есть
-                # next(reader)
-
                 ingredients_to_create = []
                 for row in reader:
                     # В CSV ожидаем 2 столбца: [название, единица_измерения]

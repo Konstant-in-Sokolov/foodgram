@@ -13,17 +13,14 @@ User = get_user_model()
 
 
 class SubscriptionPagination(PageNumberPagination):
-    """
-    Пагинация для списка подписок.
-    """
+    """Пагинация для списка подписок."""
+
     page_size = 6
     page_size_query_param = 'limit'
 
 
 class CustomUserViewSet(DjoserUserViewSet):
-    """
-    ViewSet для управления пользователями и подписками.
-    """
+    """ViewSet для управления пользователями и подписками."""
 
     queryset = User.objects.all()
     pagination_class = SubscriptionPagination
@@ -50,13 +47,11 @@ class CustomUserViewSet(DjoserUserViewSet):
     # GET /api/users/subscriptions/
     @action(
         detail=False,
-        methods=['get'],
-        permission_classes=[permissions.IsAuthenticated]
+        permission_classes=(permissions.IsAuthenticated,)
     )
     def subscriptions(self, request):
-        """
-        Возвращает список авторов, на которых подписан текущий пользователь.
-        """
+        """Возвращает список авторов, на которых подписан текущий юзер."""
+
         user = request.user
         authors = User.objects.filter(following__user=user)
 

@@ -1,8 +1,11 @@
 from django.contrib.auth import get_user_model
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from ingredients.models import Ingredient
 from tags.models import Tag
+
+MIN_COOKING_TIME = 1
+MAX_COOKING_TIME = 1440
 
 User = get_user_model()
 
@@ -32,7 +35,18 @@ class Recipe(models.Model):
         'Время приготовления (в минутах)',
         validators=[
             MinValueValidator(
-                1, message='Время приготовления должно быть не менее 1 минуты.'
+                MIN_COOKING_TIME,
+                message=(
+                    f'Время приготовления должно быть не менее '
+                    f'{MIN_COOKING_TIME} минуты.'
+                )
+            ),
+            MaxValueValidator(
+                MAX_COOKING_TIME,
+                message=(
+                    f'Время приготовления не может превышать '
+                    f'{MAX_COOKING_TIME} минут.'
+                )
             )
         ]
     )
@@ -58,7 +72,7 @@ class Recipe(models.Model):
         ordering = ['-pub_date']
         constraints = [
             models.UniqueConstraint(
-                fields=['author', 'name'],
+                fields=('author', 'name'),
                 name='unique_author_recipe'
             )
         ]

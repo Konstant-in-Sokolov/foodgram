@@ -29,7 +29,6 @@ def recipe_short_redirect(request, pk):
 class RecipeViewSet(viewsets.ModelViewSet):
     """Вьюсет для Рецептов."""
 
-    queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
     pagination_class = SubscriptionPagination
@@ -59,7 +58,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     @action(
         detail=True,
-        methods=['post', 'delete'],
+        methods=('post', 'delete'),
         permission_classes=[IsAuthenticated],
     )
     def favorite(self, request, pk=None):
@@ -146,9 +145,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         shopping_list = [
             (
-                f"{item['ingredient__name']} "
-                f"{item['ingredient__measurement_unit']} — "
-                f"{item['total_amount']}"
+                f'{item["ingredient__name"]} '
+                f'{item["ingredient__measurement_unit"]} — '
+                f'{item["total_amount"]}'
             ) for item in ingredients
         ]
 

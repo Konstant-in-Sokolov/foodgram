@@ -9,6 +9,7 @@ from .models import Ingredient, IngredientInRecipe, Recipe, Tag
 
 class IngredientWriteSerializer(serializers.ModelSerializer):
     """Сериализатор для записи ингредиентов."""
+
     id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
     amount = serializers.IntegerField()
 
@@ -27,12 +28,13 @@ class IngredientWriteSerializer(serializers.ModelSerializer):
 
 class IngredientInRecipeSerializer(serializers.ModelSerializer):
     """Сериализатор для отображения ингредиентов с количеством."""
+
     id = serializers.ReadOnlyField(source='ingredient.id')
     name = serializers.ReadOnlyField(source='ingredient.name')
     measurement_unit = serializers.ReadOnlyField(
         source='ingredient.measurement_unit'
     )
-    amount = serializers.IntegerField()
+    # amount = serializers.IntegerField()
 
     class Meta:
         model = IngredientInRecipe
@@ -125,17 +127,20 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        ingredients_data = validated_data.pop('ingredients', [])
-        tags_data = validated_data.pop('tags', [])
+        data_for_creation = validated_data.copy()
 
-        validated_data.pop('author', None)
+        ingredients_data = data_for_creation.pop('ingredients', [])
+        tags_data = data_for_creation.pop('tags', [])
+
+        data_for_creation.pop('author', None)
         author = self.context.get('request').user
-        recipe = Recipe.objects.create(author=author, **validated_data)
+        recipe = Recipe.objects.create(author=author, **data_for_creation)
 
         if tags_data:
             recipe.tags.set(tags_data)
         if ingredients_data:
             self.add_ingredients(ingredients_data, recipe)
+
         return recipe
 
     @transaction.atomic
