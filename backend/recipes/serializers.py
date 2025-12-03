@@ -1,7 +1,6 @@
 from django.db import transaction
-from rest_framework import serializers
-
 from recipes.fields import Base64ImageField
+from rest_framework import serializers
 from tags.serializers import TagSerializer
 from users.serializers import UserReadSerializer
 

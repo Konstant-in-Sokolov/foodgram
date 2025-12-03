@@ -1,3 +1,4 @@
+from api.pagination import SubscriptionPagination
 from django.contrib.auth import get_user_model
 from django.db.models import Sum
 from django.http import Http404, HttpResponse
@@ -9,8 +10,6 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import (IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
-
-from api.pagination import SubscriptionPagination
 from users.serializers import SubscriptionSerializer
 
 from .models import Favorite, IngredientInRecipe, Recipe, ShoppingCart
