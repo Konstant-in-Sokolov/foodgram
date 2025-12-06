@@ -43,6 +43,7 @@ class IngredientInRecipeSerializer(serializers.ModelSerializer):
 
 class RecipeSerializer(serializers.ModelSerializer):
     """Сериализатор для создания и отображения рецептов."""
+
     author = UserReadSerializer(read_only=True)
     image = Base64ImageField(required=True)
 
@@ -120,7 +121,8 @@ class RecipeSerializer(serializers.ModelSerializer):
         IngredientInRecipe.objects.bulk_create([
             IngredientInRecipe(
                 recipe=recipe,
-                ingredient=item['id'],
+                # ingredient=item['id'],
+                ingredient=item['id'].id,
                 amount=item['amount']
             ) for item in ingredients_data
         ])

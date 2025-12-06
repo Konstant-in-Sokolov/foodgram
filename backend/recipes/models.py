@@ -4,8 +4,8 @@ from django.db import models
 from ingredients.models import Ingredient
 from tags.models import Tag
 
-MIN_COOKING_TIME = 1
-MAX_COOKING_TIME = 1440
+MIN_VALUE = 1
+MAX_VALUE = 600
 
 User = get_user_model()
 
@@ -35,17 +35,17 @@ class Recipe(models.Model):
         'Время приготовления (в минутах)',
         validators=[
             MinValueValidator(
-                MIN_COOKING_TIME,
+                MIN_VALUE,
                 message=(
                     f'Время приготовления должно быть не менее '
-                    f'{MIN_COOKING_TIME} минуты.'
+                    f'{MIN_VALUE} минуты.'
                 )
             ),
             MaxValueValidator(
-                MAX_COOKING_TIME,
+                MAX_VALUE,
                 message=(
                     f'Время приготовления не может превышать '
-                    f'{MAX_COOKING_TIME} минут.'
+                    f'{MAX_VALUE} минут.'
                 )
             )
         ]
@@ -69,7 +69,7 @@ class Recipe(models.Model):
     class Meta:
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
-        ordering = ['-pub_date']
+        ordering = ('-pub_date',)
         constraints = [
             models.UniqueConstraint(
                 fields=('author', 'name'),
@@ -99,18 +99,23 @@ class IngredientInRecipe(models.Model):
     amount = models.PositiveSmallIntegerField(
         'Количество',
         validators=[
-            MinValueValidator(1, message='Количество должно быть не менее 1.')
+            MinValueValidator(
+                MIN_VALUE,
+                message=f'Количество должно быть не менее {MIN_VALUE}.'
+            ),
+            MaxValueValidator(
+                MAX_VALUE,
+                message=f'Количество не может превышать {MAX_VALUE}.'
+            )
         ]
     )
 
     class Meta:
         verbose_name = 'Ингредиент в рецепте'
         verbose_name_plural = 'Ингредиенты в рецептах'
-        # Уникальность: один и тот же ингредиент
-        # может быть в одном рецепте только один раз.
         constraints = [
             models.UniqueConstraint(
-                fields=['recipe', 'ingredient'],
+                fields=('recipe', 'ingredient'),
                 name='unique_recipe_ingredient'
             )
         ]
@@ -141,10 +146,9 @@ class Favorite(models.Model):
     class Meta:
         verbose_name = 'Избранный рецепт'
         verbose_name_plural = 'Избранные рецепты'
-        # Запрет на повторное добавление одного и того же рецепта в избранное
         constraints = [
             models.UniqueConstraint(
-                fields=['user', 'recipe'],
+                fields=('user', 'recipe'),
                 name='unique_favorite_recipe'
             )
         ]
@@ -172,10 +176,9 @@ class ShoppingCart(models.Model):
     class Meta:
         verbose_name = 'Рецепт в списке покупок'
         verbose_name_plural = 'Рецепты в списке покупок'
-        # Запрет на повторное добавление одного и того же рецепта
         constraints = [
             models.UniqueConstraint(
-                fields=['user', 'recipe'],
+                fields=('user', 'recipe'),
                 name='unique_shopping_cart_recipe'
             )
         ]

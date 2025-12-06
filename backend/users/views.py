@@ -69,8 +69,8 @@ class CustomUserViewSet(DjoserUserViewSet):
     # POST/DELETE /api/users/{id}/subscribe/
     @action(
         detail=True,
-        methods=['post', 'delete'],
-        permission_classes=[permissions.IsAuthenticated]
+        methods=('post', 'delete'),
+        permission_classes=(permissions.IsAuthenticated,)
     )
     def subscribe(self, request, id=None):
         """Подписка/отписка от автора."""
@@ -111,8 +111,8 @@ class CustomUserViewSet(DjoserUserViewSet):
 
     @action(
         detail=False,
-        methods=['put', 'delete'],
-        permission_classes=[permissions.IsAuthenticated],
+        methods=('put', 'delete'),
+        permission_classes=(permissions.IsAuthenticated,),
         url_path='me/avatar'
     )
     def avatar(self, request):

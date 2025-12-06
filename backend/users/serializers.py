@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
-from djoser.serializers import \
+from djoser.serializers import (
     UserCreateSerializer as DjoserUserCreateSerializer
+)
 from djoser.serializers import UserSerializer as DjoserUserSerializer
 from recipes.fields import Base64ImageField
 from recipes.models import Recipe
@@ -11,6 +12,7 @@ User = get_user_model()
 
 class RecipeMinifiedSerializer(serializers.ModelSerializer):
     """Укороченная карточка рецепта (для списка подписок)."""
+
     class Meta:
         model = Recipe
         fields = ('id', 'name', 'image', 'cooking_time')
@@ -18,6 +20,7 @@ class RecipeMinifiedSerializer(serializers.ModelSerializer):
 
 class UserAvatarSerializer(serializers.ModelSerializer):
     """Сериализатор только для обновления аватарки."""
+
     avatar = Base64ImageField(required=True)
 
     class Meta:
@@ -27,6 +30,7 @@ class UserAvatarSerializer(serializers.ModelSerializer):
 
 class UserCreateSerializer(DjoserUserCreateSerializer):
     """Сериализатор для РЕГИСТРАЦИИ."""
+
     class Meta(DjoserUserCreateSerializer.Meta):
         model = User
         fields = (
@@ -59,6 +63,7 @@ class UserReadSerializer(DjoserUserSerializer):
 
 class SubscriptionSerializer(UserReadSerializer):
     """Сериализатор для раздела ПОДПИСКИ."""
+
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
 

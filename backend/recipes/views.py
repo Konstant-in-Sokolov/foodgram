@@ -18,7 +18,7 @@ from .serializers import RecipeSerializer
 User = get_user_model()
 
 
-@api_view(['GET'])
+@api_view(('GET',))
 def recipe_short_redirect(request, pk):
     """Обрабатывает короткую ссылку и перенаправляет на полный URL."""
     if not Recipe.objects.filter(pk=pk).exists():
@@ -34,7 +34,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     pagination_class = SubscriptionPagination
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = Recipe.objects.all()
         user = self.request.user
 
         tags_slugs = self.request.query_params.getlist('tags')
@@ -59,7 +59,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(
         detail=True,
         methods=('post', 'delete'),
-        permission_classes=[IsAuthenticated],
+        permission_classes=(IsAuthenticated,)
     )
     def favorite(self, request, pk=None):
         recipe = self.get_object()
@@ -93,8 +93,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     @action(
         detail=True,
-        methods=['post', 'delete'],
-        permission_classes=[IsAuthenticated]
+        methods=('post', 'delete'),
+        permission_classes=(IsAuthenticated,)
     )
     def shopping_cart(self, request, pk=None):
         recipe = self.get_object()
@@ -127,8 +127,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     @action(
         detail=False,
-        methods=['get'],
-        permission_classes=[IsAuthenticated],
+        methods=('get',),
+        permission_classes=(IsAuthenticated,),
         url_path='download_shopping_cart',
     )
     def download_shopping_cart(self, request):
@@ -158,7 +158,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
         )
         return response
 
-    @action(detail=True, methods=['get'], url_path='get-link')
+    @action(
+        detail=True,
+        methods=('get',),
+        url_path='get-link'
+    )
     def get_short_link(self, request, pk=None):
         if not Recipe.objects.filter(pk=pk).exists():
             raise ValidationError(f'id={pk} рецепт не найден.')
@@ -173,7 +177,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
 class SubscriptionViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = SubscriptionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
     pagination_class = SubscriptionPagination
 
     def get_queryset(self):
