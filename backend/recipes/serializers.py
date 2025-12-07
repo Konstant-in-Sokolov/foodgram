@@ -1,11 +1,10 @@
 from django.db import transaction
 from rest_framework import serializers
 
+from .models import Ingredient, IngredientInRecipe, Recipe, Tag
 from recipes.fields import Base64ImageField
 from tags.serializers import TagSerializer
 from users.serializers import UserReadSerializer
-
-from .models import Ingredient, IngredientInRecipe, Recipe, Tag
 
 
 class IngredientWriteSerializer(serializers.ModelSerializer):

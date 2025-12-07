@@ -10,11 +10,10 @@ from rest_framework.permissions import (IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
 
-from api.pagination import SubscriptionPagination
-from users.serializers import SubscriptionSerializer
-
 from .models import Favorite, IngredientInRecipe, Recipe, ShoppingCart
 from .serializers import RecipeSerializer
+from api.pagination import SubscriptionPagination
+from users.serializers import SubscriptionSerializer
 
 User = get_user_model()
 
