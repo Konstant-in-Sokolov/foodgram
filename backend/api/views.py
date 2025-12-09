@@ -1,21 +1,17 @@
 from django.contrib.auth import get_user_model
 from django.db.models import Sum
-from django.http import Http404, HttpResponse
-from django.shortcuts import redirect
+from django.http import HttpResponse
 from django.urls import reverse
 from djoser.views import UserViewSet as DjoserUserViewSet
 from rest_framework import permissions, status, viewsets
-from rest_framework.decorators import action, api_view
+from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import (AllowAny, IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
 
-from ingredients.models import Ingredient
-from recipes.models import Favorite, Recipe, ShoppingCart, IngredientInRecipe
-from tags.models import Tag
-from users.models import Subscription
-from .serializers import (
+from api.pagination import SubscriptionPagination
+from api.serializers import (
     RecipeSerializer,
     SubscriptionSerializer,
     IngredientSerializer,
@@ -23,17 +19,12 @@ from .serializers import (
     UserAvatarSerializer,
     UserReadSerializer
 )
-from api.pagination import SubscriptionPagination
+from ingredients.models import Ingredient
+from recipes.models import Favorite, Recipe, ShoppingCart, IngredientInRecipe
+from tags.models import Tag
+from users.models import Subscription
 
 User = get_user_model()
-
-
-@api_view(('GET',))
-def recipe_short_redirect(request, pk):
-    """Обрабатывает короткую ссылку и перенаправляет на полный URL."""
-    if not Recipe.objects.filter(pk=pk).exists():
-        raise Http404(f'id={pk} рецепт не найден.')
-    return redirect(f'/recipes/{pk}/')
 
 
 class CustomUserViewSet(DjoserUserViewSet):

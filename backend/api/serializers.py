@@ -8,7 +8,7 @@ from djoser.serializers import (
 from rest_framework import serializers
 
 from ingredients.models import Ingredient
-from recipes.fields import Base64ImageField
+from backend.api.fields import Base64ImageField
 from recipes.models import IngredientInRecipe, Recipe
 from tags.models import Tag
 
