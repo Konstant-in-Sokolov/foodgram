@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from djoser.views import UserViewSet as DjoserUserViewSet
 from rest_framework import permissions, status
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
@@ -78,16 +79,15 @@ class CustomUserViewSet(DjoserUserViewSet):
         user = request.user
 
         if author == user:
-            return Response(
-                {'errors': 'Нельзя подписаться на самого себя.'},
-                status=status.HTTP_400_BAD_REQUEST
+            raise ValidationError(
+                {'detail': 'Нельзя подписаться на самого себя'}
             )
 
         if request.method == 'POST':
             if Subscription.objects.filter(user=user, author=author).exists():
-                return Response(
+                raise ValidationError(
                     {'errors': 'Вы уже подписаны на этого автора.'},
-                    status=status.HTTP_400_BAD_REQUEST
+                    # status=status.HTTP_400_BAD_REQUEST
                 )
             Subscription.objects.create(user=user, author=author)
 
@@ -102,9 +102,9 @@ class CustomUserViewSet(DjoserUserViewSet):
             ).delete()
             if deleted:
                 return Response(status=status.HTTP_204_NO_CONTENT)
-            return Response(
+            raise ValidationError(
                 {'errors': 'Вы не подписаны на этого автора.'},
-                status=status.HTTP_400_BAD_REQUEST
+                # status=status.HTTP_400_BAD_REQUEST
             )
 
         return Response(status=status.HTTP_204_NO_CONTENT)
