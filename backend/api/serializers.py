@@ -1,14 +1,13 @@
 from django.contrib.auth import get_user_model
 from django.db import transaction
-
 from djoser.serializers import (
     UserCreateSerializer as DjoserUserCreateSerializer,
-    UserSerializer as DjoserUserSerializer,
+    UserSerializer as DjoserUserSerializer
 )
 from rest_framework import serializers
 
-from ingredients.models import Ingredient
 from backend.api.fields import Base64ImageField
+from ingredients.models import Ingredient
 from recipes.models import IngredientInRecipe, Recipe
 from tags.models import Tag
 

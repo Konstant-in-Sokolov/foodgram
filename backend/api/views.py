@@ -12,15 +12,15 @@ from rest_framework.response import Response
 
 from api.pagination import SubscriptionPagination
 from api.serializers import (
+    IngredientSerializer,
     RecipeSerializer,
     SubscriptionSerializer,
-    IngredientSerializer,
     TagSerializer,
     UserAvatarSerializer,
     UserReadSerializer
 )
 from ingredients.models import Ingredient
-from recipes.models import Favorite, Recipe, ShoppingCart, IngredientInRecipe
+from recipes.models import Favorite, IngredientInRecipe, Recipe, ShoppingCart
 from tags.models import Tag
 from users.models import Subscription
 
