@@ -11,14 +11,9 @@ from rest_framework.permissions import (AllowAny, IsAuthenticated,
 from rest_framework.response import Response
 
 from api.pagination import SubscriptionPagination
-from api.serializers import (
-    IngredientSerializer,
-    RecipeSerializer,
-    SubscriptionSerializer,
-    TagSerializer,
-    UserAvatarSerializer,
-    UserReadSerializer
-)
+from api.serializers import (IngredientSerializer, RecipeSerializer,
+                             SubscriptionSerializer, TagSerializer,
+                             UserAvatarSerializer, UserReadSerializer)
 from ingredients.models import Ingredient
 from recipes.models import Favorite, IngredientInRecipe, Recipe, ShoppingCart
 from tags.models import Tag
