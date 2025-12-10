@@ -168,20 +168,50 @@ class RecipeSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ('pub_date',)
 
+    # def validate(self, data):
+    #     """Валидация данных."""
+    #     ingredients = data.get('ingredients')
+    #     if not ingredients:
+    #         raise serializers.ValidationError('Обязательное поле.')
+
+    #     # проверка на уникальность
+    #     ingredient_ids = [
+    #         ingredient['id'] for ingredient in ingredients
+    #     ]
+    #     if len(ingredient_ids) != len(set(ingredient_ids)):
+    #         raise serializers.ValidationError(
+    #             'Ингредиенты не могут повторяться.'
+    #         )
+    #     tags = data.get('tags')
+    #     if not tags:
+    #         raise serializers.ValidationError(
+    #             {'tags': 'Необходимо выбрать хотя бы один тег.'}
+    #         )
+    #     tag_ids = [tag.id for tag in tags]
+    #     if len(tag_ids) != len(set(tag_ids)):
+    #         raise serializers.ValidationError(
+    #             {'tags': 'Теги не могут повторяться.'}
+    #         )
+    #     return data
+
     def validate(self, data):
-        """Валидация данных."""
+        """Валидация данных с поддержкой некорректного формата фронта."""
+
         ingredients = data.get('ingredients')
+        # --- Фронт шлёт ингредиенты как словарь {0: {...}}, превращаем в список ---
+        if isinstance(ingredients, dict):
+            ingredients = list(ingredients.values())
+            data['ingredients'] = ingredients
+
         if not ingredients:
             raise serializers.ValidationError('Обязательное поле.')
-
-        # проверка на уникальность
-        ingredient_ids = [
-            ingredient['id'] for ingredient in ingredients
-        ]
+        # --- Проверка уникальности ингредиентов ---
+        ingredient_ids = [item['id'] for item in ingredients]
         if len(ingredient_ids) != len(set(ingredient_ids)):
             raise serializers.ValidationError(
                 'Ингредиенты не могут повторяться.'
             )
+        # --- Проверка тегов ---
         tags = data.get('tags')
         if not tags:
             raise serializers.ValidationError(
