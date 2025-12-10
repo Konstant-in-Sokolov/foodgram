@@ -198,7 +198,6 @@ class RecipeSerializer(serializers.ModelSerializer):
         """Валидация данных с поддержкой некорректного формата фронта."""
 
         ingredients = data.get('ingredients')
-        # --- Фронт шлёт ингредиенты как словарь {0: {...}}, превращаем в список ---
         if isinstance(ingredients, dict):
             ingredients = list(ingredients.values())
             data['ingredients'] = ingredients
