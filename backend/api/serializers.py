@@ -251,3 +251,5 @@ class RecipeSerializer(serializers.ModelSerializer):
             self.add_ingredients(ingredients_data, instance)
 
         return super().update(instance, validated_data)
+
+# ghjgfdjsd;
