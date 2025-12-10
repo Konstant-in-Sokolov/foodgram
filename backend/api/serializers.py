@@ -1,8 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.db import transaction
-from djoser.serializers import \
-    UserCreateSerializer as DjoserUserCreateSerializer
-from djoser.serializers import UserSerializer as DjoserUserSerializer
+from djoser.serializers import UserCreateSerializer
+from djoser.serializers import UserSerializer
 from rest_framework import serializers
 
 from api.fields import Base64ImageField
@@ -31,17 +30,17 @@ class UserAvatarSerializer(serializers.ModelSerializer):
         fields = ('avatar',)
 
 
-class UserCreateSerializer(DjoserUserCreateSerializer):
+class UserCreateSerializer(UserCreateSerializer):
     """Сериализатор для РЕГИСТРАЦИИ."""
 
-    class Meta(DjoserUserCreateSerializer.Meta):
+    class Meta(UserCreateSerializer.Meta):
         model = User
         fields = (
             'id', 'email', 'username', 'first_name', 'last_name', 'password'
         )
 
 
-class UserReadSerializer(DjoserUserSerializer):
+class UserReadSerializer(UserSerializer):
     """Сериализатор для ПРОСМОТРА пользователей (GET)."""
 
     is_subscribed = serializers.SerializerMethodField(read_only=True)
@@ -215,15 +214,17 @@ class RecipeSerializer(serializers.ModelSerializer):
         rep['tags'] = TagSerializer(instance.tags.all(), many=True).data
         return rep
 
-    def add_ingredients(self, ingredients_data, recipe):
+    def add_ingredients(self, ingredients_data, recipe_instance):
         """Сохраняем ингредиенты с количеством."""
-        IngredientInRecipe.objects.bulk_create([
+        recipe_instance.ingredient_amounts.all().delete()
+
+        IngredientInRecipe.objects.bulk_create(
             IngredientInRecipe(
-                recipe=recipe,
-                ingredient_id=item['id'].id,
-                amount=item['amount']
-            ) for item in ingredients_data
-        ])
+                recipe=recipe_instance,
+                ingredient=ingredient_data['id'],
+                amount=ingredient_data['amount']
+            ) for ingredient_data in ingredients_data
+        )
 
     @transaction.atomic
     def create(self, validated_data):
