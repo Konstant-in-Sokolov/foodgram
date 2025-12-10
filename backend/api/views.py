@@ -89,7 +89,6 @@ class CustomUserViewSet(DjoserUserViewSet):
             if Subscription.objects.filter(user=user, author=author).exists():
                 raise ValidationError(
                     {'errors': 'Вы уже подписаны на этого автора.'},
-                    # status=status.HTTP_400_BAD_REQUEST
                 )
             Subscription.objects.create(user=user, author=author)
 
@@ -106,7 +105,6 @@ class CustomUserViewSet(DjoserUserViewSet):
                 return Response(status=status.HTTP_204_NO_CONTENT)
             raise ValidationError(
                 {'errors': 'Вы не подписаны на этого автора.'},
-                # status=status.HTTP_400_BAD_REQUEST
             )
 
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -184,11 +182,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(author__id=author_id)
 
         return queryset.order_by('-pub_date')
-
-    # def perform_create(self, serializer):
-    #     serializer.save(
-    #         # author=self.request.user
-    #     )
 
     @action(
         detail=True,
