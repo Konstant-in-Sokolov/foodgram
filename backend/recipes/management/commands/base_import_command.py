@@ -40,7 +40,7 @@ class BaseImportCommand(BaseCommand):
             )
             return
 
-        self.stdout.write(f'\n{'=' * 50}')
+        self.stdout.write(f'\n{"=" * 50}')
         self.stdout.write(
             self.style.SUCCESS(
                 f'{name_upper} ИМПОРТИРОВАНЫ: '
