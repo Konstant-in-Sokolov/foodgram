@@ -213,17 +213,27 @@ class RecipeSerializer(serializers.ModelSerializer):
         rep['tags'] = TagSerializer(instance.tags.all(), many=True).data
         return rep
 
+    # def add_ingredients(self, ingredients_data, recipe_instance):
+    #     """Сохраняем ингредиенты с количеством."""
+    #     recipe_instance.ingredient_amounts.all().delete()
+
+    #     IngredientInRecipe.objects.bulk_create(
+    #         IngredientInRecipe(
+    #             recipe=recipe_instance,
+    #             ingredient=ingredient_data['id'],
+    #             amount=ingredient_data['amount']
+    #         ) for ingredient_data in ingredients_data
+    #     )
+
     def add_ingredients(self, ingredients_data, recipe_instance):
-        """Сохраняем ингредиенты с количеством."""
         recipe_instance.ingredient_amounts.all().delete()
 
-        IngredientInRecipe.objects.bulk_create(
-            IngredientInRecipe(
+        for item in ingredients_data:
+            IngredientInRecipe.objects.create(
                 recipe=recipe_instance,
-                ingredient=ingredient_data['id'],
-                amount=ingredient_data['amount']
-            ) for ingredient_data in ingredients_data
-        )
+                ingredient=item['id'],   # здесь уже Ingredient instance
+                amount=item['amount']
+            )
 
     @transaction.atomic
     def create(self, validated_data):
