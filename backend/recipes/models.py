@@ -14,12 +14,12 @@ User = get_user_model()
 class Recipe(models.Model):
     """Модель рецептов."""
 
-    # author = models.ForeignKey(
-    #     User,
-    #     on_delete=models.CASCADE,
-    #     related_name='recipes',
-    #     verbose_name='Автор'
-    # )
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='recipes',
+        verbose_name='Автор'
+    )
     name = models.CharField(
         'Название',
         max_length=256,
@@ -131,12 +131,12 @@ class IngredientInRecipe(models.Model):
 class Favorite(models.Model):
     """Модель для хранения избранных рецептов пользователя."""
 
-    # user = models.ForeignKey(
-    #     User,
-    #     on_delete=models.CASCADE,
-    #     related_name='favorites',
-    #     verbose_name='Пользователь'
-    # )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='favorites',
+        verbose_name='Пользователь'
+    )
     recipe = models.ForeignKey(
         'Recipe',
         on_delete=models.CASCADE,
@@ -161,12 +161,12 @@ class Favorite(models.Model):
 class ShoppingCart(models.Model):
     """Модель для хранения рецептов в списке покупок пользователя."""
 
-    # user = models.ForeignKey(
-    #     User,
-    #     on_delete=models.CASCADE,
-    #     related_name='shopping_cart',
-    #     verbose_name='Пользователь'
-    # )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='shopping_cart',
+        verbose_name='Пользователь'
+    )
     recipe = models.ForeignKey(
         'Recipe',
         on_delete=models.CASCADE,
