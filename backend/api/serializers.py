@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.db import transaction
+from django.shortcuts import get_object_or_404
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
 
@@ -228,17 +229,21 @@ class RecipeSerializer(serializers.ModelSerializer):
     def add_ingredients(self, ingredients_data, recipe_instance):
         recipe_instance.ingredient_amounts.all().delete()
 
+        ingredients_to_create = []
         for item in ingredients_data:
             ingredient = item['id']
 
             if isinstance(ingredient, int):
-                ingredient = Ingredient.objects.get(id=ingredient)
+                ingredient = get_object_or_404(Ingredient, id=ingredient)
 
-            IngredientInRecipe.objects.create(
-                recipe=recipe_instance,
-                ingredient=ingredient,
-                amount=item['amount']
+            ingredients_to_create.append(
+                IngredientInRecipe(
+                    recipe=recipe_instance,
+                    ingredient=ingredient,
+                    amount=item['amount']
+                )
             )
+        IngredientInRecipe.objects.bulk_create(ingredients_to_create)
 
     @transaction.atomic
     def create(self, validated_data):

@@ -4,7 +4,7 @@ from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.db import models
 
 
-class CustomUser(AbstractUser):
+class User(AbstractUser):
     """Модель пользователя."""
 
     email = models.EmailField(

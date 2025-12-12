@@ -19,17 +19,20 @@ class BaseImportCommand(BaseCommand):
             help=f'Путь к JSON-файлу с {self.object_name}.',
         )
 
-    def handle(self, *args, **options):
+    def handle(self, **options):
         file_path = options['file']
         name_upper = self.object_name.upper()
 
-        try:
-            with open(file_path, 'r', encoding='utf-8') as file:
+        with open(file_path, 'r', encoding='utf-8') as file:
+            data = json.load(file)
+        objs = [self.model(**item) for item in data]
 
-                created_count = len(self.model.objects.bulk_create(
-                    (self.model(**item) for item in json.load(file)),
-                    ignore_conflicts=True
-                ))
+        try:
+            created_objects = self.model.objects.bulk_create(
+                objs,
+                ignore_conflicts=True
+            )
+            created_count = len(created_objects)
 
         except Exception as error:
             self.stdout.write(
