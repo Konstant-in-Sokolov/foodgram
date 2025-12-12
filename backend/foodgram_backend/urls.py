@@ -19,7 +19,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
-from backend.foodgram_backend.links import recipe_short_redirect
+from foodgram_backend.links import recipe_short_redirect
 
 urlpatterns = [
     path('admin/', admin.site.urls),
