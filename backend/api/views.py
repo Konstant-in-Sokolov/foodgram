@@ -22,7 +22,7 @@ from users.models import Subscription
 User = get_user_model()
 
 
-class CustomUserViewSet(DjoserUserViewSet):
+class UserViewSet(DjoserUserViewSet):
     """ViewSet для управления пользователями и подписками."""
 
     queryset = User.objects.all()
