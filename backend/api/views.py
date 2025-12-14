@@ -54,7 +54,6 @@ class CustomUserViewSet(DjoserUserViewSet):
     )
     def subscriptions(self, request):
         """Возвращает список авторов, на которых подписан текущий юзер."""
-
         user = request.user
         authors = User.objects.filter(following__user=user)
 
