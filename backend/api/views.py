@@ -85,7 +85,7 @@ class UserViewSet(DjoserUserViewSet):
             )
 
         if request.method == 'POST':
-            if Subscription.objects.filter(user=user, author=author).exists():
+            if user.follower.filter(author=author).exists():
                 raise ValidationError(
                     {'errors': 'Вы уже подписаны на этого автора.'},
                 )
@@ -295,7 +295,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return Response(
             {
                 'short-link': request.build_absolute_uri(
-                    reverse('recipe_short_link', args=[pk])
+                    reverse('recipe_short_link', args=(pk,))
                 )
             }
         )

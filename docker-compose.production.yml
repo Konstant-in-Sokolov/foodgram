@@ -22,6 +22,7 @@ services:
       - static_value:/app/staticfiles/
       - media_value:/app/media/
       - docs:/app/docs/
+      - data:/app/data/
   frontend:
     container_name: foodgram-front
     image: ksokolov/foodgram_frontend
