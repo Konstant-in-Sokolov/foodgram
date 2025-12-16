@@ -5,7 +5,7 @@ from django.urls import reverse
 from djoser.views import UserViewSet as DjoserUserViewSet
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.permissions import (AllowAny, IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
@@ -17,7 +17,7 @@ from api.serializers import (IngredientSerializer, RecipeSerializer,
 from ingredients.models import Ingredient
 from recipes.models import Favorite, IngredientInRecipe, Recipe, ShoppingCart
 from tags.models import Tag
-from users.models import Subscription
+# from users.models import Subscription
 
 User = get_user_model()
 
@@ -40,11 +40,10 @@ class UserViewSet(DjoserUserViewSet):
         return super().get_serializer_class()
 
     def get_permissions(self):
-        if self.action in ['retrieve', 'list']:  # Просмотр доступен всем
+        if self.action in ['retrieve', 'list']:
             return [permissions.AllowAny()]
-        elif self.action == 'create':  # Регистрация доступна всем
+        elif self.action == 'create':
             return [permissions.AllowAny()]
-        # Для удаление/изменение/подписки нужна авторизация
         return [permissions.IsAuthenticated()]
 
     # GET /api/users/subscriptions/
@@ -69,6 +68,45 @@ class UserViewSet(DjoserUserViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     # POST/DELETE /api/users/{id}/subscribe/
+    # @action(
+    #     detail=True,
+    #     methods=('post', 'delete'),
+    #     permission_classes=(permissions.IsAuthenticated,)
+    # )
+    # def subscribe(self, request, id=None):
+    #     """Подписка/отписка от автора."""
+    #     author = self.get_object()
+    #     user = request.user
+
+    #     if author == user:
+    #         raise ValidationError(
+    #             {'detail': 'Нельзя подписаться на самого себя'}
+    #         )
+
+    #     if request.method == 'POST':
+    #         if user.follower.filter(author=author).exists():
+    #             raise ValidationError(
+    #                 {'errors': 'Вы уже подписаны на этого автора.'},
+    #             )
+    #         Subscription.objects.create(user=user, author=author)
+
+    #         serializer = UserReadSerializer(
+    #             author, context={'request': request}
+    #         )
+    #         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    #     if request.method == 'DELETE':
+    #         deleted, _ = Subscription.objects.filter(
+    #             user=user, author=author
+    #         ).delete()
+    #         if deleted:
+    #             return Response(status=status.HTTP_204_NO_CONTENT)
+    #         raise ValidationError(
+    #             {'errors': 'Вы не подписаны на этого автора.'},
+    #         )
+
+    #     return Response(status=status.HTTP_204_NO_CONTENT)
+
     @action(
         detail=True,
         methods=('post', 'delete'),
@@ -79,34 +117,51 @@ class UserViewSet(DjoserUserViewSet):
         author = self.get_object()
         user = request.user
 
-        if author == user:
-            raise ValidationError(
-                {'detail': 'Нельзя подписаться на самого себя'}
-            )
-
         if request.method == 'POST':
-            if user.follower.filter(author=author).exists():
-                raise ValidationError(
-                    {'errors': 'Вы уже подписаны на этого автора.'},
-                )
-            Subscription.objects.create(user=user, author=author)
-
-            serializer = UserReadSerializer(
-                author, context={'request': request}
+            serializer = self.get_serializer(
+                data={'user': user.id, 'author': author.id},
+                context={'request': request}
             )
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         if request.method == 'DELETE':
-            deleted, _ = Subscription.objects.filter(
-                user=user, author=author
-            ).delete()
-            if deleted:
+            subscription = user.follower.filter(author=author)
+            if subscription.exists():
+                subscription.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
+
             raise ValidationError(
-                {'errors': 'Вы не подписаны на этого автора.'},
+                {'errors': 'Вы не подписаны на этого автора.'}
             )
 
-        return Response(status=status.HTTP_204_NO_CONTENT)
+    # @action(
+    #     detail=False,
+    #     methods=('put', 'delete'),
+    #     permission_classes=(permissions.IsAuthenticated,),
+    #     url_path='me/avatar'
+    # )
+    # def avatar(self, request):
+    #     """Обновление или удаление аватара пользователя."""
+    #     user = request.user
+
+    #     if request.method == 'PUT':
+    #         serializer = UserAvatarSerializer(
+    #             user,
+    #             data=request.data,
+    #             context={'request': request}
+    #         )
+    #         serializer.is_valid(raise_exception=True)
+    #         serializer.save()
+    #         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    #     elif request.method == 'DELETE':
+    #         if user.avatar:
+    #             user.avatar.delete(save=True)
+    #         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    #     return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     @action(
         detail=False,
@@ -115,25 +170,19 @@ class UserViewSet(DjoserUserViewSet):
         url_path='me/avatar'
     )
     def avatar(self, request):
-        """Обновление или удаление аватара пользователя."""
         user = request.user
 
         if request.method == 'PUT':
-            serializer = UserAvatarSerializer(
-                user,
-                data=request.data,
-                context={'request': request}
-            )
+            serializer = self.get_serializer(user, data=request.data)
             serializer.is_valid(raise_exception=True)
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.data)
 
-        elif request.method == 'DELETE':
-            if user.avatar:
-                user.avatar.delete(save=True)
-            return Response(status=status.HTTP_204_NO_CONTENT)
+        if not user.avatar:
+            raise NotFound('Аватар не найден.')
 
-        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        user.avatar.delete(save=True)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
