@@ -3,10 +3,11 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
 from api.fields import Base64ImageField
 from ingredients.models import Ingredient
-from recipes.models import IngredientInRecipe, Recipe
+from recipes.models import Favorite, IngredientInRecipe, Recipe
 from tags.models import Tag
 
 User = get_user_model()
@@ -277,3 +278,22 @@ class RecipeSerializer(serializers.ModelSerializer):
             self.add_ingredients(ingredients_data, instance)
 
         return super().update(instance, validated_data)
+
+
+class FavoriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Favorite
+        fields = ('user', 'recipe')
+
+    def validate(self, data):
+        user = data['user']
+        recipe = data['recipe']
+        if user.favorites.filter(recipe=recipe).exists():
+            raise ValidationError('Рецепт уже добавлен в избранное.')
+        return data
+
+    def to_representation(self, instance):
+        return RecipeMinifiedSerializer(
+            instance.recipe,
+            context=self.context
+        ).data

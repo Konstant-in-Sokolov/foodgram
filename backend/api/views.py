@@ -11,11 +11,12 @@ from rest_framework.permissions import (AllowAny, IsAuthenticated,
 from rest_framework.response import Response
 
 from api.pagination import SubscriptionPagination
-from api.serializers import (IngredientSerializer, RecipeSerializer,
+from api.serializers import (FavoriteSerializer, IngredientSerializer,
+                             RecipeSerializer,
                              SubscriptionSerializer, TagSerializer,
                              UserAvatarSerializer, UserReadSerializer)
 from ingredients.models import Ingredient
-from recipes.models import Favorite, IngredientInRecipe, Recipe, ShoppingCart
+from recipes.models import IngredientInRecipe, Recipe, ShoppingCart
 from tags.models import Tag
 
 User = get_user_model()
@@ -240,30 +241,45 @@ class RecipeViewSet(viewsets.ModelViewSet):
         user = request.user
 
         if request.method == 'POST':
-            if Favorite.objects.filter(user=user, recipe=recipe).exists():
-                return Response(
-                    {'errors': 'Рецепт уже в избранном.'},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            Favorite.objects.create(user=user, recipe=recipe)
-            return Response(
-                {'message': 'Рецепт добавлен в избранное.'},
-                status=status.HTTP_201_CREATED,
+            # if Favorite.objects.filter(user=user, recipe=recipe).exists():
+            #     return Response(
+            #         {'errors': 'Рецепт уже в избранном.'},
+            #         status=status.HTTP_400_BAD_REQUEST,
+            #     )
+            # Favorite.objects.create(user=user, recipe=recipe)
+            # return Response(
+            #     {'message': 'Рецепт добавлен в избранное.'},
+            #     status=status.HTTP_201_CREATED,
+            # )
+            serializer = FavoriteSerializer(
+                data={'user': user.id, 'recipe': recipe.id},
+                context={'request': request}
             )
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        elif request.method == 'DELETE':
-            favorite_instance = Favorite.objects.filter(
-                user=user, recipe=recipe
-            )
-            if not favorite_instance.exists():
-                return Response(
-                    {'errors': 'Рецепта нет в избранном.'},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            favorite_instance.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
+        # elif request.method == 'DELETE':
+        #     favorite_instance = Favorite.objects.filter(
+        #         user=user, recipe=recipe
+        #     )
+        #     if not favorite_instance.exists():
+        #         return Response(
+        #             {'errors': 'Рецепта нет в избранном.'},
+        #             status=status.HTTP_400_BAD_REQUEST,
+        #         )
+        #     favorite_instance.delete()
+        #     return Response(status=status.HTTP_204_NO_CONTENT)
 
-        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        # return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+        favorite_instance = user.favorites.filter(recipe=recipe)
+
+        if not favorite_instance.exists():
+            raise ValidationError({'errors': 'Рецепта нет в избранном.'})
+
+        favorite_instance.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
         detail=True,
