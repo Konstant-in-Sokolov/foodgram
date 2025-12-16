@@ -277,7 +277,7 @@ class RecipeSerializer(serializers.ModelSerializer):
             instance.ingredient_amounts.all().delete()
             self.add_ingredients(ingredients_data, instance)
 
-        return super().update(instance, validated_data)
+        return super().update(instance, data_for_creation)
 
 
 class FavoriteSerializer(serializers.ModelSerializer):
