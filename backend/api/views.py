@@ -46,7 +46,6 @@ class UserViewSet(DjoserUserViewSet):
             return [permissions.AllowAny()]
         return [permissions.IsAuthenticated()]
 
-    # GET /api/users/subscriptions/
     @action(
         detail=False,
         permission_classes=(permissions.IsAuthenticated,)
@@ -66,46 +65,6 @@ class UserViewSet(DjoserUserViewSet):
             authors, many=True, context={'request': request}
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
-
-    # POST/DELETE /api/users/{id}/subscribe/
-    # @action(
-    #     detail=True,
-    #     methods=('post', 'delete'),
-    #     permission_classes=(permissions.IsAuthenticated,)
-    # )
-    # def subscribe(self, request, id=None):
-    #     """Подписка/отписка от автора."""
-    #     author = self.get_object()
-    #     user = request.user
-
-    #     if author == user:
-    #         raise ValidationError(
-    #             {'detail': 'Нельзя подписаться на самого себя'}
-    #         )
-
-    #     if request.method == 'POST':
-    #         if user.follower.filter(author=author).exists():
-    #             raise ValidationError(
-    #                 {'errors': 'Вы уже подписаны на этого автора.'},
-    #             )
-    #         Subscription.objects.create(user=user, author=author)
-
-    #         serializer = UserReadSerializer(
-    #             author, context={'request': request}
-    #         )
-    #         return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    #     if request.method == 'DELETE':
-    #         deleted, _ = Subscription.objects.filter(
-    #             user=user, author=author
-    #         ).delete()
-    #         if deleted:
-    #             return Response(status=status.HTTP_204_NO_CONTENT)
-    #         raise ValidationError(
-    #             {'errors': 'Вы не подписаны на этого автора.'},
-    #         )
-
-    #     return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
         detail=True,
@@ -135,33 +94,6 @@ class UserViewSet(DjoserUserViewSet):
             raise ValidationError(
                 {'errors': 'Вы не подписаны на этого автора.'}
             )
-
-    # @action(
-    #     detail=False,
-    #     methods=('put', 'delete'),
-    #     permission_classes=(permissions.IsAuthenticated,),
-    #     url_path='me/avatar'
-    # )
-    # def avatar(self, request):
-    #     """Обновление или удаление аватара пользователя."""
-    #     user = request.user
-
-    #     if request.method == 'PUT':
-    #         serializer = UserAvatarSerializer(
-    #             user,
-    #             data=request.data,
-    #             context={'request': request}
-    #         )
-    #         serializer.is_valid(raise_exception=True)
-    #         serializer.save()
-    #         return Response(serializer.data, status=status.HTTP_200_OK)
-
-    #     elif request.method == 'DELETE':
-    #         if user.avatar:
-    #             user.avatar.delete(save=True)
-    #         return Response(status=status.HTTP_204_NO_CONTENT)
-
-    #     return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     @action(
         detail=False,
@@ -241,16 +173,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
         user = request.user
 
         if request.method == 'POST':
-            # if Favorite.objects.filter(user=user, recipe=recipe).exists():
-            #     return Response(
-            #         {'errors': 'Рецепт уже в избранном.'},
-            #         status=status.HTTP_400_BAD_REQUEST,
-            #     )
-            # Favorite.objects.create(user=user, recipe=recipe)
-            # return Response(
-            #     {'message': 'Рецепт добавлен в избранное.'},
-            #     status=status.HTTP_201_CREATED,
-            # )
             serializer = FavoriteSerializer(
                 data={'user': user.id, 'recipe': recipe.id},
                 context={'request': request}
@@ -259,22 +181,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        # elif request.method == 'DELETE':
-        #     favorite_instance = Favorite.objects.filter(
-        #         user=user, recipe=recipe
-        #     )
-        #     if not favorite_instance.exists():
-        #         return Response(
-        #             {'errors': 'Рецепта нет в избранном.'},
-        #             status=status.HTTP_400_BAD_REQUEST,
-        #         )
-        #     favorite_instance.delete()
-        #     return Response(status=status.HTTP_204_NO_CONTENT)
-
-        # return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
-
         favorite_instance = user.favorites.filter(recipe=recipe)
-
         if not favorite_instance.exists():
             raise ValidationError({'errors': 'Рецепта нет в избранном.'})
 
