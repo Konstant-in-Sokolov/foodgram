@@ -17,7 +17,6 @@ from api.serializers import (IngredientSerializer, RecipeSerializer,
 from ingredients.models import Ingredient
 from recipes.models import Favorite, IngredientInRecipe, Recipe, ShoppingCart
 from tags.models import Tag
-# from users.models import Subscription
 
 User = get_user_model()
 
