@@ -230,21 +230,13 @@ class RecipeSerializer(serializers.ModelSerializer):
     def add_ingredients(self, ingredients_data, recipe_instance):
         recipe_instance.ingredient_amounts.all().delete()
 
-        ingredients_to_create = []
-        for item in ingredients_data:
-            ingredient = item['id']
-
-            if isinstance(ingredient, int):
-                ingredient = get_object_or_404(Ingredient, id=ingredient)
-
-            ingredients_to_create.append(
-                IngredientInRecipe(
-                    recipe=recipe_instance,
-                    ingredient=ingredient,
-                    amount=item['amount']
-                )
-            )
-        IngredientInRecipe.objects.bulk_create(ingredients_to_create)
+        IngredientInRecipe.objects.bulk_create(
+            IngredientInRecipe(
+                recipe=recipe_instance,
+                ingredient=ingredient_data['id'],
+                amount=ingredient_data['amount']
+            ) for ingredient_data in ingredients_data
+        )
 
     @transaction.atomic
     def create(self, validated_data):
