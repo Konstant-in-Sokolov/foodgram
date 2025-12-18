@@ -13,10 +13,11 @@ from rest_framework.response import Response
 from api.pagination import SubscriptionPagination
 from api.serializers import (FavoriteSerializer, IngredientSerializer,
                              RecipeSerializer, SubscriptionSerializer,
+                             SubscribeSerializer, ShoppingCartSerializer,
                              TagSerializer, UserAvatarSerializer,
                              UserReadSerializer)
 from ingredients.models import Ingredient
-from recipes.models import IngredientInRecipe, Recipe, ShoppingCart
+from recipes.models import IngredientInRecipe, Recipe
 from tags.models import Tag
 
 User = get_user_model()
@@ -34,7 +35,7 @@ class UserViewSet(DjoserUserViewSet):
         if self.action == 'subscriptions':
             return SubscriptionSerializer
         if self.action == 'subscribe':
-            return SubscriptionSerializer
+            return SubscribeSerializer
         if self.action == 'avatar':
             return UserAvatarSerializer
         return super().get_serializer_class()
@@ -57,12 +58,14 @@ class UserViewSet(DjoserUserViewSet):
 
         page = self.paginate_queryset(authors)
         if page is not None:
-            serializer = SubscriptionSerializer(
-                page, many=True, context={'request': request}
+            serializer = self.get_serializer(
+                page, many=True,
+                # context={'request': request}
             )
             return self.get_paginated_response(serializer.data)
-        serializer = UserReadSerializer(
-            authors, many=True, context={'request': request}
+        serializer = self.get_serializer(
+            authors, many=True,
+            # context={'request': request}
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -79,21 +82,19 @@ class UserViewSet(DjoserUserViewSet):
         if request.method == 'POST':
             serializer = self.get_serializer(
                 data={'user': user.id, 'author': author.id},
-                context={'request': request}
+                # context={'request': request}
             )
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        if request.method == 'DELETE':
-            subscription = user.follower.filter(author=author)
-            if subscription.exists():
-                subscription.delete()
-                return Response(status=status.HTTP_204_NO_CONTENT)
-
+        subscription = user.follower.filter(author=author)
+        if not subscription.exists():
             raise ValidationError(
                 {'errors': 'Вы не подписаны на этого автора.'}
             )
+        subscription.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
         detail=False,
@@ -102,6 +103,7 @@ class UserViewSet(DjoserUserViewSet):
         url_path='me/avatar'
     )
     def avatar(self, request):
+        """Добавление/изменение/удаление аватара."""
         user = request.user
 
         if request.method == 'PUT':
@@ -163,19 +165,27 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         return queryset.order_by('-pub_date')
 
+    def get_serializer_class(self):
+        if self.action == 'favorite':
+            return FavoriteSerializer
+        if self.action == 'shopping_cart':
+            return ShoppingCartSerializer
+        return RecipeSerializer
+
     @action(
         detail=True,
         methods=('post', 'delete'),
         permission_classes=(IsAuthenticated,)
     )
     def favorite(self, request, pk=None):
+        """Добавление/удаление из избранного."""
         recipe = self.get_object()
         user = request.user
 
         if request.method == 'POST':
-            serializer = FavoriteSerializer(
+            serializer = self.get_serializer(
                 data={'user': user.id, 'recipe': recipe.id},
-                context={'request': request}
+                # context={'request': request}
             )
             serializer.is_valid(raise_exception=True)
             serializer.save()
@@ -198,29 +208,20 @@ class RecipeViewSet(viewsets.ModelViewSet):
         user = request.user
 
         if request.method == 'POST':
-            if ShoppingCart.objects.filter(user=user, recipe=recipe).exists():
-                return Response(
-                    {'errors': 'Рецепт уже в корзине.'},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            ShoppingCart.objects.create(user=user, recipe=recipe)
-            return Response(
-                {'message': 'Рецепт добавлен в корзину.'},
-                status=status.HTTP_201_CREATED,
+            serializer = self.get_serializer(
+                data={'user': user.id, 'recipe': recipe.id},
+                # context={'request': request}
             )
-        elif request.method == 'DELETE':
-            cart_instance = ShoppingCart.objects.filter(
-                user=user, recipe=recipe
-            )
-            if not cart_instance.exists():
-                return Response(
-                    {'errors': 'Рецепт не найден в корзине.'},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            cart_instance.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        cart_instance = user.shopping_cart.filter(recipe=recipe)
+        if not cart_instance.exists():
+            raise ValidationError({'errors': 'Рецепт не найден в корзине.'})
+
+        cart_instance.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
         detail=False,
@@ -261,12 +262,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
         url_path='get-link'
     )
     def get_short_link(self, request, pk=None):
-        if not Recipe.objects.filter(pk=pk).exists():
-            raise ValidationError(f'id={pk} рецепт не найден.')
+        recipe = self.get_object()
         return Response(
             {
                 'short-link': request.build_absolute_uri(
-                    reverse('recipe_short_link', args=(pk,))
+                    reverse('recipe_short_link', args=(recipe.pk,))
                 )
             }
         )

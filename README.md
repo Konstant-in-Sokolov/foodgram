@@ -1,5 +1,10 @@
 ![CI](https://github.com/Konstant-in-Sokolov/foodgram/actions/workflows/main.yml/badge.svg)
 
+ip: 51.250.27.166
+логин/пароль для суперюзера
+admin@adm.in
+admin
+
 # Foodgram
 Учебный проект на REST API для публикации и управления рецептами.
 
