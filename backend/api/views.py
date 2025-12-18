@@ -12,8 +12,8 @@ from rest_framework.response import Response
 
 from api.pagination import SubscriptionPagination
 from api.serializers import (FavoriteSerializer, IngredientSerializer,
-                             RecipeSerializer, SubscriptionSerializer,
-                             SubscribeSerializer, ShoppingCartSerializer,
+                             RecipeSerializer, ShoppingCartSerializer,
+                             SubscribeSerializer, SubscriptionSerializer,
                              TagSerializer, UserAvatarSerializer,
                              UserReadSerializer)
 from ingredients.models import Ingredient
