@@ -7,14 +7,17 @@ from recipes.models import Recipe
 
 @api_view(('GET',))
 def recipe_short_redirect(request, pk):
-    """Обрабатывает короткую ссылку и перенаправляет на фронтенд сайта."""
+    """Обрабатывает короткую ссылку и перенаправляет на фронтенд."""
     if not Recipe.objects.filter(pk=pk).exists():
         raise Http404(f'id={pk} рецепт не найден.')
 
     host = request.get_host()
-    protocol = (
-        'https' if not host.startswith('127.0.0.1')
-        and not host.startswith('localhost') else 'http'
-    )
+    local_hosts = ('127.0.0.1', 'localhost')
 
-    return redirect(f'{protocol}://{host}/recipes/{pk}/')
+    if any(host.startswith(h) for h in local_hosts):
+        protocol = 'http'
+    else:
+        protocol = 'https'
+
+    base_url = protocol + '://' + host
+    return redirect(f'{base_url}/recipes/{pk}/')
