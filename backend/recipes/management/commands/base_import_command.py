@@ -32,8 +32,6 @@ class BaseImportCommand(BaseCommand):
                 objs,
                 ignore_conflicts=True
             )
-            created_count = len(created_objects)
-
         except Exception as error:
             self.stdout.write(
                 self.style.ERROR(
@@ -42,6 +40,8 @@ class BaseImportCommand(BaseCommand):
                 )
             )
             return
+
+        created_count = len(created_objects)
 
         self.stdout.write(f'\n{"=" * 50}')
         self.stdout.write(

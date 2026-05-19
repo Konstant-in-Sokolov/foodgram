@@ -3,6 +3,7 @@ from django.db import transaction
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
+from rest_framework.validators import UniqueTogetherValidator
 
 from api.fields import Base64ImageField
 from ingredients.models import Ingredient
@@ -100,15 +101,17 @@ class SubscribeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subscription
         fields = ('user', 'author')
+        validators = [
+            UniqueTogetherValidator(
+                queryset=Subscription.objects.all(),
+                fields=('user', 'author'),
+                message='Вы уже подписаны на этого автора.'
+            )
+        ]
 
     def validate(self, data):
-        user = data['user']
-        author = data['author']
-
-        if user == author:
+        if data['user'] == data['author']:
             raise ValidationError('Нельзя подписаться на самого себя.')
-        if Subscription.objects.filter(user=user, author=author).exists():
-            raise ValidationError('Вы уже подписаны на этого автора.')
         return data
 
     def to_representation(self, instance):
@@ -232,13 +235,13 @@ class RecipeSerializer(serializers.ModelSerializer):
     def get_is_favorited(self, obj):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
-            return obj.in_favorites.filter(user=request.user).exists()
+            return request.user.favorites.filter(recipe=obj).exists()
         return False
 
     def get_is_in_shopping_cart(self, obj):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
-            return obj.in_shopping_cart.filter(user=request.user).exists()
+            return request.user.shopping_cart.filter(recipe=obj).exists()
         return False
 
     def to_representation(self, instance):
@@ -299,14 +302,13 @@ class FavoriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Favorite
         fields = ('user', 'recipe')
-
-    def validate(self, data):
-        user = data['user']
-        recipe = data['recipe']
-
-        if user.favorites.filter(user=user, recipe=recipe).exists():
-            raise ValidationError('Рецепт уже добавлен в избранное.')
-        return data
+        validators = [
+            UniqueTogetherValidator(
+                queryset=Favorite.objects.all(),
+                fields=('user', 'recipe'),
+                message='Этот рецепт уже добавлен в избранное.'
+            )
+        ]
 
     def to_representation(self, instance):
         return RecipeMinifiedSerializer(
@@ -321,14 +323,13 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShoppingCart
         fields = ('user', 'recipe')
-
-    def validate(self, data):
-        user = data['user']
-        recipe = data['recipe']
-
-        if user.shopping_cart.filter(user=user, recipe=recipe).exists():
-            raise ValidationError('Рецепт уже находится в корзине покупок.')
-        return data
+        validators = [
+            UniqueTogetherValidator(
+                queryset=ShoppingCart.objects.all(),
+                fields=('user', 'recipe'),
+                message='Этот рецепт уже находится в корзине покупок.'
+            )
+        ]
 
     def to_representation(self, instance):
         return RecipeMinifiedSerializer(

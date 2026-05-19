@@ -6,8 +6,6 @@ from djoser.views import UserViewSet as DjoserUserViewSet
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
-from rest_framework.permissions import (AllowAny, IsAuthenticated,
-                                        IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
 
 from api.pagination import SubscriptionPagination
@@ -30,7 +28,7 @@ class UserViewSet(DjoserUserViewSet):
     pagination_class = SubscriptionPagination
 
     def get_serializer_class(self):
-        if self.action in ['retrieve', 'list', 'me']:
+        if self.action in ('retrieve', 'list', 'me'):
             return UserReadSerializer
         if self.action == 'subscriptions':
             return SubscriptionSerializer
@@ -41,9 +39,7 @@ class UserViewSet(DjoserUserViewSet):
         return super().get_serializer_class()
 
     def get_permissions(self):
-        if self.action in ['retrieve', 'list']:
-            return [permissions.AllowAny()]
-        elif self.action == 'create':
+        if self.action in ('retrieve', 'list', 'create'):
             return [permissions.AllowAny()]
         return [permissions.IsAuthenticated()]
 
@@ -58,15 +54,9 @@ class UserViewSet(DjoserUserViewSet):
 
         page = self.paginate_queryset(authors)
         if page is not None:
-            serializer = self.get_serializer(
-                page, many=True,
-                # context={'request': request}
-            )
+            serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
-        serializer = self.get_serializer(
-            authors, many=True,
-            # context={'request': request}
-        )
+        serializer = self.get_serializer(authors, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(
@@ -82,7 +72,6 @@ class UserViewSet(DjoserUserViewSet):
         if request.method == 'POST':
             serializer = self.get_serializer(
                 data={'user': user.id, 'author': author.id},
-                # context={'request': request}
             )
             serializer.is_valid(raise_exception=True)
             serializer.save()
@@ -127,7 +116,7 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = IngredientSerializer
-    permission_classes = (AllowAny,)
+    permission_classes = (permissions.AllowAny,)
     pagination_class = None
 
     def get_queryset(self):
@@ -141,8 +130,7 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 class RecipeViewSet(viewsets.ModelViewSet):
     """Вьюсет для Рецептов."""
 
-    serializer_class = RecipeSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     pagination_class = SubscriptionPagination
 
     def get_queryset(self):
@@ -175,7 +163,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(
         detail=True,
         methods=('post', 'delete'),
-        permission_classes=(IsAuthenticated,)
+        permission_classes=(permissions.IsAuthenticated,)
     )
     def favorite(self, request, pk=None):
         """Добавление/удаление из избранного."""
@@ -185,7 +173,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if request.method == 'POST':
             serializer = self.get_serializer(
                 data={'user': user.id, 'recipe': recipe.id},
-                # context={'request': request}
             )
             serializer.is_valid(raise_exception=True)
             serializer.save()
@@ -201,7 +188,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(
         detail=True,
         methods=('post', 'delete'),
-        permission_classes=(IsAuthenticated,)
+        permission_classes=(permissions.IsAuthenticated,)
     )
     def shopping_cart(self, request, pk=None):
         recipe = self.get_object()
@@ -210,7 +197,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if request.method == 'POST':
             serializer = self.get_serializer(
                 data={'user': user.id, 'recipe': recipe.id},
-                # context={'request': request}
             )
             serializer.is_valid(raise_exception=True)
             serializer.save()
@@ -226,7 +212,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(
         detail=False,
         methods=('get',),
-        permission_classes=(IsAuthenticated,),
+        permission_classes=(permissions.IsAuthenticated,),
         url_path='download_shopping_cart',
     )
     def download_shopping_cart(self, request):
@@ -241,13 +227,12 @@ class RecipeViewSet(viewsets.ModelViewSet):
             .order_by('ingredient__name')
         )
 
-        shopping_list = [
-            (
-                f'{item["ingredient__name"]} '
-                f'{item["ingredient__measurement_unit"]} — '
-                f'{item["total_amount"]}'
-            ) for item in ingredients
-        ]
+        shopping_list = tuple(
+            f'{item["ingredient__name"]} '
+            f'{item["ingredient__measurement_unit"]} — '
+            f'{item["total_amount"]}'
+            for item in ingredients
+        )
 
         content = '\n'.join(shopping_list)
         response = HttpResponse(content, content_type='text/plain')
@@ -263,18 +248,18 @@ class RecipeViewSet(viewsets.ModelViewSet):
     )
     def get_short_link(self, request, pk=None):
         recipe = self.get_object()
-        return Response(
-            {
-                'short-link': request.build_absolute_uri(
-                    reverse('recipe_short_link', args=(recipe.pk,))
-                )
-            }
+        url = request.build_absolute_uri(
+            reverse('recipe_short_link', args=(recipe.pk,))
         )
+        if '127.0.0.1' not in url and 'localhost' not in url:
+            url = url.replace('http://', 'https://')
+
+        return Response({'short-link': url})
 
 
 class SubscriptionViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = SubscriptionSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated,)
     pagination_class = SubscriptionPagination
 
     def get_queryset(self):
