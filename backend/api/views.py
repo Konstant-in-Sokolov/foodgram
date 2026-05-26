@@ -5,7 +5,7 @@ from django.urls import reverse
 from djoser.views import UserViewSet as DjoserUserViewSet
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 
 from api.pagination import SubscriptionPagination
@@ -68,21 +68,17 @@ class UserViewSet(DjoserUserViewSet):
         """Подписка/отписка от автора."""
         author = self.get_object()
         user = request.user
+        data = {'user': user.id, 'author': author.id}
 
         if request.method == 'POST':
-            serializer = self.get_serializer(
-                data={'user': user.id, 'author': author.id},
-            )
+            serializer = self.get_serializer(data=data)
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        subscription = user.follower.filter(author=author)
-        if not subscription.exists():
-            raise ValidationError(
-                {'errors': 'Вы не подписаны на этого автора.'}
-            )
-        subscription.delete()
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
@@ -160,6 +156,23 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return ShoppingCartSerializer
         return RecipeSerializer
 
+    def _handle_recipe_action(self, request, pk):
+        """Общий метод для добавления/удаления рецептов (Избранное/Корзина)."""
+        recipe = self.get_object()
+        user = request.user
+        data = {'user': user.id, 'recipe': recipe.id}
+
+        if request.method == 'POST':
+            serializer = self.get_serializer(data=data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
     @action(
         detail=True,
         methods=('post', 'delete'),
@@ -167,23 +180,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     )
     def favorite(self, request, pk=None):
         """Добавление/удаление из избранного."""
-        recipe = self.get_object()
-        user = request.user
-
-        if request.method == 'POST':
-            serializer = self.get_serializer(
-                data={'user': user.id, 'recipe': recipe.id},
-            )
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-        favorite_instance = user.favorites.filter(recipe=recipe)
-        if not favorite_instance.exists():
-            raise ValidationError({'errors': 'Рецепта нет в избранном.'})
-
-        favorite_instance.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return self._handle_recipe_action(request, pk)
 
     @action(
         detail=True,
@@ -191,23 +188,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
         permission_classes=(permissions.IsAuthenticated,)
     )
     def shopping_cart(self, request, pk=None):
-        recipe = self.get_object()
-        user = request.user
-
-        if request.method == 'POST':
-            serializer = self.get_serializer(
-                data={'user': user.id, 'recipe': recipe.id},
-            )
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-        cart_instance = user.shopping_cart.filter(recipe=recipe)
-        if not cart_instance.exists():
-            raise ValidationError({'errors': 'Рецепт не найден в корзине.'})
-
-        cart_instance.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        """Добавление/удаление из корзины покупок."""
+        return self._handle_recipe_action(request, pk)
 
     @action(
         detail=False,
@@ -247,13 +229,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
         url_path='get-link'
     )
     def get_short_link(self, request, pk=None):
+        """Получить короткую ссылку на рецепт."""
         recipe = self.get_object()
         url = request.build_absolute_uri(
             reverse('recipe_short_link', args=(recipe.pk,))
         )
-        if '127.0.0.1' not in url and 'localhost' not in url:
-            url = url.replace('http://', 'https://')
-
         return Response({'short-link': url})
 
 

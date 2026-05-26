@@ -6,10 +6,8 @@ from .models import User
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
-    """
-    Настройка админ-панели для пользователей.
-    Поиск по email и username.
-    """
+    """Настройка админ-панели для пользователей."""
+
     list_display = ('id', 'username', 'email', 'first_name', 'last_name')
     search_fields = ('email', 'username')
     list_filter = ('email', 'username')

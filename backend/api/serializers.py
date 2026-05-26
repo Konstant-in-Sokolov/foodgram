@@ -3,7 +3,6 @@ from django.db import transaction
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-from rest_framework.validators import UniqueTogetherValidator
 
 from api.fields import Base64ImageField
 from ingredients.models import Ingredient
@@ -101,20 +100,32 @@ class SubscribeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subscription
         fields = ('user', 'author')
-        validators = [
-            UniqueTogetherValidator(
-                queryset=Subscription.objects.all(),
-                fields=('user', 'author'),
-                message='Вы уже подписаны на этого автора.'
-            )
-        ]
 
     def validate(self, data):
-        if data['user'] == data['author']:
-            raise ValidationError('Нельзя подписаться на самого себя.')
+        user = data['user']
+        author = data['author']
+        method = self.context['request'].method
+
+        if method == 'POST':
+            if user == author:
+                raise ValidationError('Нельзя подписаться на самого себя.')
+            if user.follower.filter(author=author).exists():
+                raise ValidationError('Вы уже подписаны на этого автора.')
+
+        if method == 'DELETE':
+            if not user.follower.filter(author=author).exists():
+                raise ValidationError('Вы не подписаны на этого автора.')
+
         return data
 
+    def delete(self):
+        user = self.validated_data['user']
+        author = self.validated_data['author']
+        user.follower.filter(author=author).delete()
+
     def to_representation(self, instance):
+        if not instance:
+            return {}
         return SubscriptionSerializer(
             instance.author,
             context=self.context
@@ -302,15 +313,32 @@ class FavoriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Favorite
         fields = ('user', 'recipe')
-        validators = [
-            UniqueTogetherValidator(
-                queryset=Favorite.objects.all(),
-                fields=('user', 'recipe'),
-                message='Этот рецепт уже добавлен в избранное.'
-            )
-        ]
+
+    def validate(self, data):
+        user = data['user']
+        recipe = data['recipe']
+        method = self.context['request'].method
+
+        if method == 'POST':
+            if user.favorites.filter(recipe=recipe).exists():
+                raise ValidationError(
+                    'Этот рецепт уже добавлен в избранное.'
+                )
+
+        if method == 'DELETE':
+            if not user.favorites.filter(recipe=recipe).exists():
+                raise ValidationError('Рецепта нет в избранном.')
+
+        return data
+
+    def delete(self):
+        user = self.validated_data['user']
+        recipe = self.validated_data['recipe']
+        user.favorites.filter(recipe=recipe).delete()
 
     def to_representation(self, instance):
+        if not instance:
+            return {}
         return RecipeMinifiedSerializer(
             instance.recipe,
             context=self.context
@@ -323,15 +351,32 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShoppingCart
         fields = ('user', 'recipe')
-        validators = [
-            UniqueTogetherValidator(
-                queryset=ShoppingCart.objects.all(),
-                fields=('user', 'recipe'),
-                message='Этот рецепт уже находится в корзине покупок.'
-            )
-        ]
+
+    def validate(self, data):
+        user = data['user']
+        recipe = data['recipe']
+        method = self.context['request'].method
+
+        if method == 'POST':
+            if user.shopping_cart.filter(recipe=recipe).exists():
+                raise ValidationError(
+                    'Этот рецепт уже находится в корзине покупок.'
+                )
+
+        if method == 'DELETE':
+            if not user.shopping_cart.filter(recipe=recipe).exists():
+                raise ValidationError('Рецепт не найден в корзине.')
+
+        return data
+
+    def delete(self):
+        user = self.validated_data['user']
+        recipe = self.validated_data['recipe']
+        user.shopping_cart.filter(recipe=recipe).delete()
 
     def to_representation(self, instance):
+        if not instance:
+            return {}
         return RecipeMinifiedSerializer(
             instance.recipe,
             context=self.context
